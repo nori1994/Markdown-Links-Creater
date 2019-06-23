@@ -1,0 +1,49 @@
+<!--https://developer.chrome.com/extensions/options-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="options.css">
+        <script src="options.js"></script>
+        <title>Create Markdown Links</title>
+
+    </head>
+    <body>
+        <h1 id="name"></h1><h2 id="version"></h2>
+        <div>
+            <h2>Setting</h2>
+            <p class="text">Set wheter to stock Markdown links to
+                ClipBoard.</p>
+            <p class="text">ONにしている間にリンクを作成した場合、ストックしたリンクとして保存されます。
+                OFFの時にリンクを作成してもストックしたリンク一覧に追加はされません。</p>
+            <p class="text">
+                ONからOFFにした時は、最近作成したリンクがクリップボードにコピーされています。ストックされているリンクは勝手に削除されません。
+            </p>
+            <div class="radioArea" id="makeImg">
+                <input type="radio" name="n1" id="r1" checked><label for="r1">ON</label>
+                <input type="radio" name="n1" id="r2"><label for="r2">OFF</label>
+            </div>
+        </div>
+        <div>
+            <h2>Stocked Links</h2>
+            <p class="text">Manage the list of stocked Markdown Links to
+                ChipBoard.</p>
+            <p class="text">ストックされるリンクはXX数までです。</p>
+            <button id="allSelect">All Select</button>
+            <table class="tableArea" id="makeImg"
+                onclick="tableClick(event)">
+                <thead>
+                    <tr>
+                        <th>Markdown Link</th>
+                        <th>Selected</th>
+                    </tr>
+                </thead>
+                <tbody id="links"></tbody>
+            </table>
+
+            <!--<div id="status"></div>-->
+            <button id="delete">Deleted</button>
+
+        </div>
+    </body>
+</html>
