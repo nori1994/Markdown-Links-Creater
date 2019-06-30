@@ -37,14 +37,19 @@
   border        : 1px #666666 solid; /* 罫線      */
   background    : #cccccc;           /* 背景色    */
 }
- /* --- 明細のスタイル指定 ----------------------- */
+ /* --- テーブルのスタイル指定 ----------------------- */
 .tableArea td {
   padding       : 5px;               /* 余白      */
   border        : 1px #666666 solid; /* 罫線      */
   cursor        : pointer;           /* カーソル  */
 }
  /* --- セルにカーソルが乗ったとき --------------- */
-.tableArea td:hover {
+.tableArea tr:hover {
+  background    : #cccccc;           /* 背景色    */
+  color         : #000000;           /* 文字色    */
+}
+ /* --- チェックボックスがチェックされたとき --------------- */
+input[type="checkbox"]:checked + .tableArea tr {
   background    : #ff7f50;           /* 背景色    */
   color         : #ffffff;           /* 文字色    */
 }

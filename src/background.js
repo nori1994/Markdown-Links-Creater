@@ -21,27 +21,21 @@ function createContextMenu() {
     });
 }
 
-/**
- * コンテキストメニューで、画像、リンクをMarkdown形式に変換してコピーする関数
- *
- * @param object info
- */
 function createLink(info, tab) {
     console.log("createLink");
 
     //var mediaType = info.mediaType;
     //var srcUrl = info.srcUrl;
     //var url = info.pageUrl;
-    var selectionText = info.selectionText;
     //var isSelectedText = typeof selectionText !== 'undefined';
 
-    var text = info.selectionText || tab.title || url;
+    var text = info.selectionText || info.title || info.url;
 
     var url;
     if (info.mediaType === 'image') {
         url = info.srcUrl;
     } else {
-        url = info.linkUrl || info.pageUrl || tab.url;
+        url = info.linkUrl || info.pageUrl || info.url;
     }
 
     // TODO:リンクが上手く拾えないときの例外処理
@@ -96,8 +90,9 @@ function copyToClipBoard(range) {
 
 //https://teratail.com/questions/138504
 function saveLink(text) {
+
     chrome.storage.local.get(function (items) {
-        var length = Object.keys(items).length;
+        var length = items['length'];
         if (Number(length)) {
             length++;
         } else {
@@ -107,6 +102,7 @@ function saveLink(text) {
         var tmp = {};
         tmp[length] = text;
         chrome.storage.local.set(tmp);
+        chrome.storage.local.set({ 'length': length });
     });
 }
 
