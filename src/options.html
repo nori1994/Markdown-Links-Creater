@@ -20,15 +20,15 @@
                 ONからOFFにした時は、最近作成したリンクがクリップボードにコピーされています。ストックされているリンクは勝手に削除されません。
             </p>
             <div class="radioArea" id="makeImg">
-                <input type="radio" name="n1" id="r1" checked><label for="r1">ON</label>
-                <input type="radio" name="n1" id="r2"><label for="r2">OFF</label>
+                <input type="radio" name="n1" id="r1"><label for="r1">ON</label>
+                <input type="radio" name="n1" id="r2" checked><label for="r2">OFF</label>
             </div>
         </div>
         <div>
             <h2>Stocked Links</h2>
             <p class="text">Manage the list of stocked Markdown Links to
                 ChipBoard.</p>
-            <p class="text">ストックされるリンクはXX数までです。</p>
+            <button id="copy">Copy Stocked Links</button>
             <button id="allSelect">All Select</button>
             <table class="tableArea" id="linksTable">
                 <thead>

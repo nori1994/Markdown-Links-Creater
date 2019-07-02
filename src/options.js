@@ -3,9 +3,11 @@ window.onload = function () {
     initialize();
 }
 
+let TABLE;
 function initialize() {
     setTitle();
     setTable();
+    document.getElementById('copy').addEventListener('click', copyLinks);
     document.getElementById('allSelect').addEventListener('click', selectAllLinks);
     document.getElementById('delete').addEventListener('click', deleteLink);
     TABLE = document.getElementById("linksTable");
@@ -16,79 +18,135 @@ function initialize() {
         });
 }
 
+function copyLinks(event) {
+    getChromeStorage().then(
+        response => {
+            copyToClipBoard(response);
+        }
+    )
+}
+
+// TODO:関数共通化
+function copyToClipBoard(items) {
+    let text = '';
+    /*
+                for (let i = 1; i < Object.keys(items).length + 1; i++) {
+                    console.log('set:' + items[String(i)]);
+                    text += items[String(i)];
+                }
+    */
+    Object.keys(items).forEach(function (key) {
+        if (key !== 'length') {
+            console.log('set:' + items[key]);
+            text += (items[key] + '  \n');
+        }
+    });
+
+    // テキストエリアを作って値を入れる
+    let ta = document.createElement('textarea');
+    let st = ta.style;
+    st.position = 'fixed';
+    st.left = '-100%';
+    ta.value = text;
+
+    // 作成したテキストエリアをbody要素に追加
+    document.body.appendChild(ta);
+
+    // テキストエリアを選択
+    ta.select();
+
+    // クリップボードにコピー
+    let result = document.execCommand('copy');
+
+    // body要素から作成したテキストエリアを削除
+    document.body.removeChild(ta);
+
+    return result;
+}
+
 function setTitle() {
     let manifest = chrome.runtime.getManifest();
     document.getElementById("name").innerText = manifest.name;
     document.getElementById("version").innerText = manifest.version;
 }
 
-
-let TABLE;
-//let CHECKBOX_ROW_INDEX = 0;
+// checkboxIDとLinkのIDは同一
 let CHECKBOX_IDS = [];
 function setTable() {
-    chrome.storage.local.get(function (items) {
-        // テーブルのクリア
-        while (TABLE.rows[1]) TABLE.deleteRow(1);
+    getChromeStorage().then(
+        response => {
+            let items = response;
+            // テーブルのクリア
+            while (TABLE.rows[1]) TABLE.deleteRow(1);
 
-        let length = items['length'];
-        if (!Number(length)) {
-            length = 1;
-        }
+            var r1Checked = document.getElementById("r1").checked;
 
-        CHECKBOX_IDS = [];
-        // テーブルの生成
-        // itemsは1からのオブジェクト
-        // TODO:chrome.storageのArray登録すれば無駄にfor文回さなくて済む
-        for (let index = 1; index < length + 1; index++) {
-            if (items[index]) {
-                let newtr = TABLE.insertRow(TABLE.rows.length);
+            let length = items['length'];
+            if (!Number(length)) {
+                length = 1;
+            }
 
-                let selecttd = newtr.insertCell(newtr.cells.length);
+            CHECKBOX_IDS = [];
+            // テーブルの生成
+            // itemsは1からのオブジェクト
+            // TODO:chrome.storageのArray登録すれば無駄にfor文回さなくて済む
+            for (let index = 1; index < length + 1; index++) {
+                if (items[index]) {
+                    let newtr = TABLE.insertRow(TABLE.rows.length);
 
-                // チェックボックスの作成
-                let checkbox = document.createElement('input');
-                //checkbox.type('checkbox')
-                checkbox.setAttribute("type", "checkbox");
-                var id = "checkbox" + index;
-                //CHECKBOX_IDS[index] = (id);
-                CHECKBOX_IDS.push(id);
-                checkbox.setAttribute('id', id);
-                checkbox.setAttribute('name', 'links');
-                checkbox.setAttribute('click', deleteLink);
-                selecttd.appendChild(checkbox);
+                    let selecttd = newtr.insertCell(newtr.cells.length);
 
-                let linktd = newtr.insertCell(newtr.cells.length);
-                linktd.innerHTML = items[index];
+                    // チェックボックスの作成
+                    let checkbox = document.createElement('input');
+                    //checkbox.type('checkbox')
+                    checkbox.setAttribute("type", "checkbox");
+                    var id = index;
+                    //CHECKBOX_IDS[index] = (id);
+                    CHECKBOX_IDS.push(id);
+                    checkbox.setAttribute('id', id);
+                    checkbox.setAttribute('name', 'links');
+                    checkbox.setAttribute('click', deleteLink);
+                    selecttd.appendChild(checkbox);
 
-                newtr.addEventListener('click', selectLink);
+                    let linktd = newtr.insertCell(newtr.cells.length);
+                    linktd.innerHTML = items[index];
 
-                /*取れない
-                chrome.storage.local.get(String(index), function (item) {
-                    newtd1.innerHTML = item.key;
-                });
-                */
+                    newtr.addEventListener('click', selectLinks);
+
+                    /*取れない
+                    chrome.storage.local.get(String(index), function (item) {
+                        newtd1.innerHTML = item.key;
+                    });
+                    */
+                }
+
             }
         }
-    });
+    );
 }
 
-function selectLink(event) {
-    // trから直接checkbox制御はできなかった、
-    //let cell = event.currentTarget.cells[CHECKBOX_ROW_INDEX];
-    //cell.checkbox.checked = true;
-    // linksが定義されてないと怒られる
-    //let checkbox = document.linksTable.links[event.currentTarget.rowIndex];
-
-    let id = CHECKBOX_IDS[event.currentTarget.rowIndex - 1];
+function checkLink(index) {
+    let id = CHECKBOX_IDS[index - 1];
     let checkbox = document.getElementById(id);
 
     if (event.target.type !== 'checkbox')
         checkbox.checked = checkbox.checked ? false : true;
 }
 
-function selectAllLinks(event) {
+function selectLinks(event) {
+    // trから直接checkbox制御はできなかった、
+    //let cell = event.currentTarget.cells[CHECKBOX_ROW_INDEX];
+    //cell.checkbox.checked = true;
+    // linksが定義されてないと怒られる
+    //let checkbox = document.linksTable.links[event.currentTarget.rowIndex];
 
+    checkLink(event.currentTarget.rowIndex);
+}
+
+function selectAllLinks(event) {
+    for (let i = 1; i < TABLE.rows.length; i++) {
+        checkLink(i);
+    }
 }
 
 function deleteLink(event) {
@@ -104,20 +162,31 @@ function deleteLink(event) {
     let deleteIdIndexs = new Array();
     for (let i = 0; i < CHECKBOX_IDS.length; i++) {
         if (document.getElementById(CHECKBOX_IDS[i]).checked) {
+            // TODO:引数をArrayにする
+            chrome.storage.local.remove(CHECKBOX_IDS[i] + "");
             deleteIdIndexs.push(i + 1);
-            //background.jsで使うリンクの削除
         }
     }
 
     for (var i = 0; i < deleteIdIndexs.length; i++) {
-        TABLE.deleteRow(deleteIdIndexs[i]);
+        //chrome.storage.localの変化でイベントハンドラでテーブル操作する
+        //TABLE.deleteRow(deleteIdIndexs[i]);
         CHECKBOX_IDS.splice(deleteIdIndexs[i] - 1, 1);
-        chrome.storage.local.remove(deleteIdIndexs[i] + "", function () { }); // 上の作業はcallbackにしてもいいかも
-
+        // TODO:上の作業はcallbackにしてもいいかも
     }
 }
+// TODO:非同期にするのだ
+function getChromeStorage(keys = null) {
+    return new Promise(resolve => {
+        chrome.storage.local.get(keys, resolve);
+    });
+}
 
-
+function setChromeStorage(items) {
+    return new Promise(resolve => {
+        chrome.storage.local.set(items, resolve);
+    });
+}
 
 // ｈ１などのタグができる前に登録してしまう
 //document.getElementById('all-select').addEventListener('click',selectLink);
