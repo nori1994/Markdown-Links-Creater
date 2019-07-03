@@ -1,3 +1,6 @@
+const LINKS_STORAGE_KEY = 'links';
+const LASTID_STORAGE_KEY = 'lastId';
+
 // 拡張のインストール時やバージョンアップ時に発火するイベントハンドラの登録
 chrome.runtime.onInstalled.addListener(createContextMenu);
 
@@ -24,47 +27,57 @@ function createContextMenu() {
 function createLink(info, tab) {
     console.log("createLink");
 
-    //var mediaType = info.mediaType;
-    //var srcUrl = info.srcUrl;
-    //var url = info.pageUrl;
-    //var isSelectedText = typeof selectionText !== 'undefined';
+    //let mediaType = info.mediaType;
+    //let srcUrl = info.srcUrl;
+    //let url = info.pageUrl;
+    //let isSelectedText = typeof selectionText !== 'undefined';
 
-    var text = info.selectionText || info.title || tab !== undefined ? tab.url : info.url;
-
-    var url;
+    let url;
     if (info.mediaType === 'image') {
         url = info.srcUrl;
     } else {
-        url = info.linkUrl || info.pageUrl || tab !== undefined ? tab.url : info.url;
+        url = info.linkUrl || info.pageUrl || info.url;
+        if (!url) {
+            if (tab)
+                url = tab.url;
+        }
     }
+
+    let text = info.selectionText || info.title || url;
 
     // TODO:リンクが上手く拾えないときの例外処理
     saveLink('[' + text + '](' + url + ')');
 
-    //var retult = copyToClipBoard();
+    //let retult = copyToClipBoard();
 
     // TODO:ショートカット
     // TODO：権限の整理
 }
 
-function copyToClipBoard(items) {
-    var text = '';
+function copyToClipBoard(links) {
+    let text = '';
     /*
-                for (var i = 1; i < Object.keys(items).length + 1; i++) {
+                for (let i = 1; i < Object.keys(items).length + 1; i++) {
                     console.log('set:' + items[String(i)]);
                     text += items[String(i)];
                 }
     */
-    Object.keys(items).forEach(function (key) {
-        if (key !== 'length') {
-            console.log('set:' + items[key]);
-            text += (items[key] + '  \n');
+    /*
+    Object.keys(links).forEach(function (key) {
+        if (key === 'lastId') {
+            console.log('set:' + links[key]);
+            text += (links[key] + '  \n');
         }
     });
+    */
+    for (let i = 0; i < links.length; i++) {
+        console.log('set:' + links[i]);
+        text += (links[i] + '  \n');
+    }
 
     // テキストエリアを作って値を入れる
-    var ta = document.createElement('textarea');
-    var st = ta.style;
+    let ta = document.createElement('textarea');
+    let st = ta.style;
     st.position = 'fixed';
     st.left = '-100%';
     ta.value = text;
@@ -76,17 +89,16 @@ function copyToClipBoard(items) {
     ta.select();
 
     // クリップボードにコピー
-    var result = document.execCommand('copy');
+    let result = document.execCommand('copy');
 
     // body要素から作成したテキストエリアを削除
     document.body.removeChild(ta);
-
-    return result;
 }
 
 async function getLinks(range) {
     if (range === 'all') {
-        return await getChromeStorage(null);
+        let links = await getChromeStorage(LINKS_STORAGE_KEY);
+        return links[LINKS_STORAGE_KEY];
     } else {
         return null;
     }
@@ -127,16 +139,21 @@ function setChromeStorage(items) {
 
 //https://teratail.com/questions/138504
 function saveLink(text) {
-    getChromeStorage('length').then(
+    getChromeStorage().then(
         response => {
-            var length = response['length'];
-            if (Number(length)) {
-                length++;
+            let lastId = response[LASTID_STORAGE_KEY];
+            if (Number(lastId)) {
+                lastId++;
             } else {
-                length = 1;
+                lastId = 1;
             }
 
-            return save(length, text);
+            let links = response[LINKS_STORAGE_KEY];
+            if (!links)
+                links = new Array();
+            links.push(text);
+
+            return saveStorage(lastId, links);
         }
     )
         .then(
@@ -146,17 +163,18 @@ function saveLink(text) {
         )
         .then(
             response => {
-                var result = copyToClipBoard(response);
-                console.log('save link success:' + result);
+                copyToClipBoard(response);
             }
         )
-    //var a = ChromeStorage.get('length');
+    //let a = ChromeStorage.get('length');
     //await ChromeStorage.set({ 'length': 23 }, function () { });
 }
 
-async function save(length, text) {
-    var tmp = {};
-    tmp[length] = text;
-    await setChromeStorage(tmp);
-    await setChromeStorage({ 'length': length });
+async function saveStorage(lastId, links) {
+    let linksSetting = {};
+    linksSetting[LINKS_STORAGE_KEY] = links;
+    let lastIdSetting = {};
+    lastIdSetting[LASTID_STORAGE_KEY] = lastId;
+    await setChromeStorage(linksSetting);
+    await setChromeStorage(lastIdSetting);
 }
