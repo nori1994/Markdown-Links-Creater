@@ -123,11 +123,11 @@ function checkStockLinksSetting(result) {
         && (!onButton.checked && !offButton.checked)) return;
 
     if (result === STOCK_LINKS_SETTING.ON && !onButton.checked) {
-        document.getElementById("canStockedLinks").checked = true;
-        document.getElementById("cannotStockedLinks").checked = false;
+        onButton.checked = true;
+        offButton.checked = false;
     } else if (result === STOCK_LINKS_SETTING.OFF && !offButton.checked) {
-        document.getElementById("canStockedLinks").checked = false;
-        document.getElementById("cannotStockedLinks").checked = true;
+        onButton.checked = false;
+        offButton.checked = true;
 
         getChromeStorage(LINKS_KEY).then(
             response => {
