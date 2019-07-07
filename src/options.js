@@ -1,4 +1,13 @@
-const LINKS_STORAGE_KEY = 'links';
+const LINKS_KEY = 'links';
+const CAN_STOCK_LINKS_KEY = 'canStockLinks';
+const STOCK_LINKS_SETTING = {
+    ON: true,
+    OFF: false,
+    NOSET: null
+};
+const NEWVALUE_KEY = 'newValue';
+const OLDVALUE_KEY = 'oldValue';
+const LASTID_STORAGE_KEY = 'lastId';
 
 window.onload = function () {
     // ページ読み込み時に実行したい処理
@@ -6,26 +15,186 @@ window.onload = function () {
 }
 
 let TABLE;
-function initialize() {
-    setTitle();
-    setTable();
+async function initialize() {
+    await setSetting(STOCK_LINKS_SETTING.NOSET);
+    //checkStockLinksSetting(result);
+    await setTitle();
+    await setTable();
+
+    TABLE = document.getElementById("linksTable");
+
+    document.getElementById('canStockedLinks').addEventListener('click', canStockLinks);
+    document.getElementById('cannotStockedLinks').addEventListener('click', cannotStockLinks);
     document.getElementById('copy').addEventListener('click', copyLinks);
     document.getElementById('allSelect').addEventListener('click', selectAllLinks);
     document.getElementById('delete').addEventListener('click', deleteLink);
-    TABLE = document.getElementById("linksTable");
+
     chrome.storage.onChanged.addListener
         ((changes) => {
             console.log(changes);
-            setTable();
+            if (changes[CAN_STOCK_LINKS_KEY]) {
+                if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]) {
+                    setLastLinkOnly();
+                    // TODO:ボタンをunenable
+                } else if (changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]) {
+                    // TODO:ボタンをenable
+                }
+            } else if (changes[LINKS_KEY]) {
+                setTable();
+            }
             // TODO:テーブル追加・削除だけしたい
             //table.deleteRow(i);
         });
 }
 
-function copyLinks(event) {
-    getChromeStorage(LINKS_STORAGE_KEY).then(
+function setTitle() {
+    let manifest = chrome.runtime.getManifest();
+    document.getElementById("name").innerText = manifest.name;
+    document.getElementById("version").innerText = manifest.version;
+}
+
+function setTable() {
+    getChromeStorage(LINKS_KEY).then(
         response => {
-            copyToClipBoard(response[LINKS_STORAGE_KEY]);
+            let links = response[LINKS_KEY];
+            // テーブルのクリア
+            while (TABLE.rows[1]) TABLE.deleteRow(1);
+
+            // テーブルの生成
+            for (let i = 0; i < links.length; i++) {
+                let newtr = TABLE.insertRow(TABLE.rows.length);
+                let selecttd = newtr.insertCell(newtr.cells.length);
+
+                // チェックボックスの作成
+                let checkbox = document.createElement('input');
+                //checkbox.type('checkbox')
+                checkbox.setAttribute("type", "checkbox");
+                var id = i + 1;
+                checkbox.setAttribute('id', id);
+                //checkbox.setAttribute('name', 'links');
+                checkbox.setAttribute('click', deleteLink);
+                selecttd.appendChild(checkbox);
+
+                let linktd = newtr.insertCell(newtr.cells.length);
+                linktd.innerHTML = links[i];
+
+                newtr.addEventListener('click', selectLinks);
+            }
+            // itemsは1からのオブジェクト
+            // TODO:chrome.storageのArray登録すれば無駄にfor文回さなくて済む
+        }
+    );
+}
+
+function setSetting(settingAfter) {
+    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
+        settingBefore => {
+            return settingBefore[CAN_STOCK_LINKS_KEY];
+        }
+    ).then(
+        settingBefore => {
+            if (Object.keys(settingBefore).length === 0 && settingAfter == STOCK_LINKS_SETTING.NOSET) {
+                return setCanStockLinks(STOCK_LINKS_SETTING.OFF);
+            } else if (settingBefore == STOCK_LINKS_SETTING.NOSET ||
+                (settingAfter != STOCK_LINKS_SETTING.NOSET && settingBefore !== settingAfter)) {
+                return setCanStockLinks(settingAfter);
+            }
+            return settingBefore;
+        }
+    ).then(
+        result => {
+            checkStockLinksSetting(result);
+        }
+    )
+}
+
+async function setCanStockLinks(setting) {
+    let data = {};
+    data[CAN_STOCK_LINKS_KEY] = setting;
+    await setChromeStorage(data);
+    return setting;
+}
+
+function checkStockLinksSetting(result) {
+    let onButton = document.getElementById("canStockedLinks");
+    let offButton = document.getElementById("cannotStockedLinks");
+
+    if (result !== STOCK_LINKS_SETTING.ON && result !== STOCK_LINKS_SETTING.OFF
+        && (!onButton.checked && !offButton.checked)) return;
+
+    if (result === STOCK_LINKS_SETTING.ON && !onButton.checked) {
+        document.getElementById("canStockedLinks").checked = true;
+        document.getElementById("cannotStockedLinks").checked = false;
+    } else if (result === STOCK_LINKS_SETTING.OFF && !offButton.checked) {
+        document.getElementById("canStockedLinks").checked = false;
+        document.getElementById("cannotStockedLinks").checked = true;
+
+        getChromeStorage(LINKS_KEY).then(
+            response => {
+                let links = response[LINKS_KEY];
+                let result = [];
+                result.push(links[links.length - 1]);
+                return result;
+            }
+        )
+            .then(
+                response => {
+                    setLinks(response);
+                }
+            )
+    }
+}
+
+function setLastLinkOnly() {
+    getChromeStorage(LINKS_KEY).then(
+        response => {
+            let links = response[LINKS_KEY];
+            let result = [];
+            result.push(links[links.length - 1]);
+            return result;
+        }
+    )
+        .then(
+            response => {
+                setLinks(response);
+                resetLastID();
+            }
+        )
+}
+
+function canStockLinks(event) {
+    setSetting(STOCK_LINKS_SETTING.ON);
+    //checkStockLinksSetting(result);
+}
+
+function cannotStockLinks(event) {
+    /*
+    getChromeStorage(LINKS_KEY).then(
+        response => {
+            let links = response[LINKS_KEY];
+            let result = [];
+            result.push(links[links.length - 1]);
+            return result;
+        }
+    )
+        .then(
+            response => {
+                setLinks(response);
+            }
+        )
+ 
+    document.getElementById("canStockedLinks").checked = false;
+    document.getElementById("cannotStockedLinks").checked = true;
+    */
+    // TODO:リンクの設定を上書き保存
+    setSetting(STOCK_LINKS_SETTING.OFF);
+    //checkStockLinksSetting(result);
+}
+
+function copyLinks(event) {
+    getChromeStorage(LINKS_KEY).then(
+        response => {
+            copyToClipBoard(response[LINKS_KEY]);
         }
     )
 }
@@ -58,48 +227,6 @@ function copyToClipBoard(links) {
     document.body.removeChild(ta);
 }
 
-function setTitle() {
-    let manifest = chrome.runtime.getManifest();
-    document.getElementById("name").innerText = manifest.name;
-    document.getElementById("version").innerText = manifest.version;
-}
-
-function setTable() {
-    getChromeStorage(LINKS_STORAGE_KEY).then(
-        response => {
-            let links = response[LINKS_STORAGE_KEY];
-            // テーブルのクリア
-            while (TABLE.rows[1]) TABLE.deleteRow(1);
-
-            // TODO:ストックコピー設定か見て、テーブル作成判断
-            let r1Checked = document.getElementById("r1").checked;
-
-            // テーブルの生成
-            for (let i = 0; i < links.length; i++) {
-                let newtr = TABLE.insertRow(TABLE.rows.length);
-                let selecttd = newtr.insertCell(newtr.cells.length);
-
-                // チェックボックスの作成
-                let checkbox = document.createElement('input');
-                //checkbox.type('checkbox')
-                checkbox.setAttribute("type", "checkbox");
-                var id = i + 1;
-                checkbox.setAttribute('id', id);
-                //checkbox.setAttribute('name', 'links');
-                checkbox.setAttribute('click', deleteLink);
-                selecttd.appendChild(checkbox);
-
-                let linktd = newtr.insertCell(newtr.cells.length);
-                linktd.innerHTML = links[i];
-
-                newtr.addEventListener('click', selectLinks);
-            }
-            // itemsは1からのオブジェクト
-            // TODO:chrome.storageのArray登録すれば無駄にfor文回さなくて済む
-        }
-    );
-}
-
 function checkLink(index) {
     let id = index;
     let checkbox = document.getElementById(id);
@@ -125,9 +252,9 @@ function selectAllLinks(event) {
 }
 
 function deleteLink(event) {
-    getChromeStorage(LINKS_STORAGE_KEY).then(
+    getChromeStorage(LINKS_KEY).then(
         response => {
-            let newLinks = response[LINKS_STORAGE_KEY].filter(
+            let newLinks = response[LINKS_KEY].filter(
                 function (value, index) {
                     if (!document.getElementById(index + 1).checked)
                         return value;
@@ -166,9 +293,15 @@ function deleteLink(event) {
 }
 
 async function setLinks(links) {
-    let linksSetting = {};
-    linksSetting[LINKS_STORAGE_KEY] = links;
-    await setChromeStorage(linksSetting);
+    let data = {};
+    data[LINKS_KEY] = links;
+    await setChromeStorage(data);
+}
+
+async function resetLastID() {
+    let data = {};
+    data[LASTID_STORAGE_KEY] = 0;
+    await setChromeStorage(data);
 }
 
 // TODO:非同期にするのだ
@@ -210,7 +343,7 @@ function save_options() {
         }, 750);
     });
 }
-
+ 
 // Restores select box and checkbox state using the preferences
 // stored in chrome.storage.
 function restore_options() {

@@ -1,5 +1,6 @@
 const LINKS_STORAGE_KEY = 'links';
 const LASTID_STORAGE_KEY = 'lastId';
+const CAN_STOCK_LINKS_KEY = 'canStockLinks';
 
 // 拡張のインストール時やバージョンアップ時に発火するイベントハンドラの登録
 chrome.runtime.onInstalled.addListener(createContextMenu);
@@ -95,15 +96,11 @@ function copyToClipBoard(links) {
     document.body.removeChild(ta);
 }
 
-async function getLinks(range) {
-    if (range === 'all') {
-        let links = await getChromeStorage(LINKS_STORAGE_KEY);
-        return links[LINKS_STORAGE_KEY];
-    } else {
-        return null;
-    }
+async function getLinks() {
+    let links = await getChromeStorage(LINKS_STORAGE_KEY);
+    return links[LINKS_STORAGE_KEY];
 }
-
+/*
 function getLinkLength() {
     return new Promise(resolve => {
         chrome.storage.local.get('length', resolve);
@@ -124,7 +121,7 @@ const ChromeStorage = {
         });
     }
 };
-
+*/
 function getChromeStorage(keys = null) {
     return new Promise(resolve => {
         chrome.storage.local.get(keys, resolve);
@@ -148,9 +145,11 @@ function saveLink(text) {
                 lastId = 1;
             }
 
+            let canStockLinks = response[CAN_STOCK_LINKS_KEY];
             let links = response[LINKS_STORAGE_KEY];
-            if (!links)
+            if (!links || !canStockLinks)
                 links = new Array();
+
             links.push(text);
 
             return saveStorage(lastId, links);
@@ -158,7 +157,7 @@ function saveLink(text) {
     )
         .then(
             response => {
-                return getLinks('all');
+                return getLinks();
             }
         )
         .then(
