@@ -16,6 +16,7 @@ window.onload = function () {
 
 let TABLE;
 let ALL_SELECT_BUTTON;
+let ALL_DESELECT_BUTTON;
 let DELETE_BUTTON;
 let CAN_STOCK_LINKS_BUTTON;
 let CANNOT_STOCK_LINKS_BUTTON;
@@ -25,12 +26,14 @@ async function initialize() {
     CAN_STOCK_LINKS_BUTTON = document.getElementById('canStockLinks');
     CANNOT_STOCK_LINKS_BUTTON = document.getElementById('cannotStockLinks');
     ALL_SELECT_BUTTON = document.getElementById('allSelect');
+    ALL_DESELECT_BUTTON = document.getElementById('allDeselect');
     DELETE_BUTTON = document.getElementById('delete');
 
     CAN_STOCK_LINKS_BUTTON.addEventListener('click', canStockLinks);
     CANNOT_STOCK_LINKS_BUTTON.addEventListener('click', cannotStockLinks);
     document.getElementById('copy').addEventListener('click', copyLinks);
     ALL_SELECT_BUTTON.addEventListener('click', selectAllLinks);
+    ALL_DESELECT_BUTTON.addEventListener('click', deselectAllLinks);
     DELETE_BUTTON.addEventListener('click', deleteLink);
 
     chrome.storage.onChanged.addListener
@@ -67,6 +70,7 @@ function changeActivationStockedLinksButtons(isActivation) {
         linkRow.disabled = !isActivation;
 
     ALL_SELECT_BUTTON.disabled = !isActivation;
+    ALL_DESELECT_BUTTON.disabled = !isActivation;
     DELETE_BUTTON.disabled = !isActivation;
 }
 
@@ -270,8 +274,16 @@ function selectLinks(event) {
 }
 
 function selectAllLinks(event) {
+    alignCheckAllLinksState(true);
+}
+
+function deselectAllLinks(event) {
+    alignCheckAllLinksState(false);
+}
+
+function alignCheckAllLinksState(isSelectAllLinks) {
     for (let i = 1; i < TABLE.rows.length; i++) {
-        if (!document.getElementById(i).checked)
+        if (document.getElementById(i).checked !== isSelectAllLinks)
             checkLink(i, event);
     }
 }
