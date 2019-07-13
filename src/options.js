@@ -41,7 +41,7 @@ async function initialize() {
             if (changes[CAN_STOCK_LINKS_KEY]) {
                 if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
                     setLastLinkOnly();
-                changeActivationStockedLinksButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
+                //changeActivationStockedLinksButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
             } else if (changes[LINKS_KEY]) {
                 setTable();
             }
@@ -49,11 +49,12 @@ async function initialize() {
             //table.deleteRow(i);
         });
 
-    let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
-    await setSetting(setting[CAN_STOCK_LINKS_KEY]);
+
     //checkStockLinksSetting(result);
     await setTitle();
     await setTable();
+    let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
+    await setSetting(setting[CAN_STOCK_LINKS_KEY]);
     //await setActivationStockedLinksButtons();
 }
 
@@ -65,9 +66,16 @@ async function setActivationStockedLinksButtons() {
 }
 
 function changeActivationStockedLinksButtons(isActivation) {
-    let linkRow = document.getElementById(1);
-    if (linkRow)
-        linkRow.disabled = !isActivation;
+    let checkbox = document.getElementById(1);
+    if (checkbox) {
+        checkbox.disabled = !isActivation;
+
+        if (isActivation) {
+            TABLE.rows[1].addEventListener('click', selectLink);
+        } else {
+            TABLE.rows[1].removeEventListener('click', selectLink);
+        }
+    }
 
     ALL_SELECT_BUTTON.disabled = !isActivation;
     ALL_DESELECT_BUTTON.disabled = !isActivation;
@@ -105,7 +113,7 @@ async function setTable() {
                 let linktd = newtr.insertCell(newtr.cells.length);
                 linktd.innerHTML = links[i];
 
-                newtr.addEventListener('click', selectLinks);
+                newtr.addEventListener('click', selectLink);
             }
             // itemsは1からのオブジェクト
             // TODO:chrome.storageのArray登録すれば無駄にfor文回さなくて済む
@@ -263,13 +271,12 @@ function checkLink(index, event) {
         checkbox.checked = checkbox.checked ? false : true;
 }
 
-function selectLinks(event) {
+function selectLink(event) {
     // trから直接checkbox制御はできなかった、
     //let cell = event.currentTarget.cells[CHECKBOX_ROW_INDEX];
     //cell.checkbox.checked = true;
     // linksが定義されてないと怒られる
     //let checkbox = document.linksTable.links[event.currentTarget.rowIndex];
-
     checkLink(event.currentTarget.rowIndex, event);
 }
 

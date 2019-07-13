@@ -4,24 +4,6 @@
   height        : 10pt;        /* 大きさ：縦 */
   vertical-align: top;         /* 並び位置   */
 }
- /* --- チェックボックス直後のlabel --- */
-.radioArea input[type="radio"] + label {
-  padding       : 0 4px;                      /* labelの余白 */
-  font-size     : 10pt;                       /* labelの文字サイズ */
-  font-weight   : normal;                     /* 文字太さ   */
-  border-radius : 5px;                        /* labelの角丸 */
-  cursor        : pointer;                    /* カーソル設定 */
-  transition    : .2s;                        /* なめらか変化 */
-}
- /* --- 選択されたチェックボックス直後のlabel --- */
-.radioArea input[type="radio"]:checked + label {
-  font-weight   : bold;        /* labelの太字 */
-}
- /* --- 選択されていないチェックボックス直後のlabelにマウスが乗った --- */
-.radioArea input[type="radio"]:not(:checked) + label:hover {
-  font-weight   : bold;        /* labelの太字 */
-}
-
  /* --- テーブル全体のスタイル指定 --------------- */
  .tableArea {
   margin         : auto;             /* 自動位置   */
@@ -48,8 +30,8 @@
   background    : #cccccc;           /* 背景色    */
   color         : #000000;           /* 文字色    */
 }
- /* --- チェックボックスがチェックされたとき --------------- */
-input[type="checkbox"]:checked + .tableArea tr {
+ /* --- チェックボックスがチェックされたとき(使われてない) --------------- */
+.tableArea input[type="checkbox"]:checked + .tableArea tr {
   background    : #ff7f50;           /* 背景色    */
   color         : #ffffff;           /* 文字色    */
 }
