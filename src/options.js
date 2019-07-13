@@ -15,48 +15,71 @@ window.onload = function () {
 }
 
 let TABLE;
+let ALL_SELECT_BUTTON;
+let DELETE_BUTTON;
+let CAN_STOCK_LINKS_BUTTON;
+let CANNOT_STOCK_LINKS_BUTTON;
+
 async function initialize() {
-    await setSetting(STOCK_LINKS_SETTING.NOSET);
-    //checkStockLinksSetting(result);
-    await setTitle();
-    await setTable();
-
     TABLE = document.getElementById("linksTable");
+    CAN_STOCK_LINKS_BUTTON = document.getElementById('canStockLinks');
+    CANNOT_STOCK_LINKS_BUTTON = document.getElementById('cannotStockLinks');
+    ALL_SELECT_BUTTON = document.getElementById('allSelect');
+    DELETE_BUTTON = document.getElementById('delete');
 
-    document.getElementById('canStockedLinks').addEventListener('click', canStockLinks);
-    document.getElementById('cannotStockedLinks').addEventListener('click', cannotStockLinks);
+    CAN_STOCK_LINKS_BUTTON.addEventListener('click', canStockLinks);
+    CANNOT_STOCK_LINKS_BUTTON.addEventListener('click', cannotStockLinks);
     document.getElementById('copy').addEventListener('click', copyLinks);
-    document.getElementById('allSelect').addEventListener('click', selectAllLinks);
-    document.getElementById('delete').addEventListener('click', deleteLink);
+    ALL_SELECT_BUTTON.addEventListener('click', selectAllLinks);
+    DELETE_BUTTON.addEventListener('click', deleteLink);
 
     chrome.storage.onChanged.addListener
         ((changes) => {
-            console.log(changes);
             if (changes[CAN_STOCK_LINKS_KEY]) {
-                if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]) {
+                if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
                     setLastLinkOnly();
-                    // TODO:ボタンをunenable
-                } else if (changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]) {
-                    // TODO:ボタンをenable
-                }
+                changeActivationStockedLinksButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
             } else if (changes[LINKS_KEY]) {
                 setTable();
             }
             // TODO:テーブル追加・削除だけしたい
             //table.deleteRow(i);
         });
+
+    let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
+    await setSetting(setting[CAN_STOCK_LINKS_KEY]);
+    //checkStockLinksSetting(result);
+    await setTitle();
+    await setTable();
+    //await setActivationStockedLinksButtons();
 }
 
-function setTitle() {
+// いらない
+async function setActivationStockedLinksButtons() {
+    let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
+    await setSetting(setting[CAN_STOCK_LINKS_KEY]);
+    changeActivationStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY]);
+}
+
+function changeActivationStockedLinksButtons(isActivation) {
+    let linkRow = document.getElementById(1);
+    if (linkRow)
+        linkRow.disabled = !isActivation;
+
+    ALL_SELECT_BUTTON.disabled = !isActivation;
+    DELETE_BUTTON.disabled = !isActivation;
+}
+
+async function setTitle() {
     let manifest = chrome.runtime.getManifest();
     document.getElementById("name").innerText = manifest.name;
     document.getElementById("version").innerText = manifest.version;
 }
 
-function setTable() {
+async function setTable() {
     getChromeStorage(LINKS_KEY).then(
-        response => {
-            let links = response[LINKS_KEY];
+        links => {
+            links = links[LINKS_KEY];
             // テーブルのクリア
             while (TABLE.rows[1]) TABLE.deleteRow(1);
 
@@ -86,7 +109,7 @@ function setTable() {
     );
 }
 
-function setSetting(settingAfter) {
+async function setSetting(settingAfter) {
     getChromeStorage(CAN_STOCK_LINKS_KEY).then(
         settingBefore => {
             return settingBefore[CAN_STOCK_LINKS_KEY];
@@ -98,12 +121,14 @@ function setSetting(settingAfter) {
             } else if (settingBefore == STOCK_LINKS_SETTING.NOSET ||
                 (settingAfter != STOCK_LINKS_SETTING.NOSET && settingBefore !== settingAfter)) {
                 return setCanStockLinks(settingAfter);
+            } else {
+                return settingBefore;
             }
-            return settingBefore;
         }
     ).then(
         result => {
             checkStockLinksSetting(result);
+            changeActivationStockedLinksButtons(result);
         }
     )
 }
@@ -116,39 +141,40 @@ async function setCanStockLinks(setting) {
 }
 
 function checkStockLinksSetting(result) {
-    let onButton = document.getElementById("canStockedLinks");
-    let offButton = document.getElementById("cannotStockedLinks");
-
     if (result !== STOCK_LINKS_SETTING.ON && result !== STOCK_LINKS_SETTING.OFF
-        && (!onButton.checked && !offButton.checked)) return;
+        && (!CAN_STOCK_LINKS_BUTTON.checked && !CANNOT_STOCK_LINKS_BUTTON.checked)) return;
 
-    if (result === STOCK_LINKS_SETTING.ON && !onButton.checked) {
-        onButton.checked = true;
-        offButton.checked = false;
-    } else if (result === STOCK_LINKS_SETTING.OFF && !offButton.checked) {
-        onButton.checked = false;
-        offButton.checked = true;
-
-        getChromeStorage(LINKS_KEY).then(
-            response => {
-                let links = response[LINKS_KEY];
-                let result = [];
-                result.push(links[links.length - 1]);
-                return result;
-            }
-        )
-            .then(
-                response => {
-                    setLinks(response);
-                }
-            )
+    if (result === STOCK_LINKS_SETTING.ON && !CAN_STOCK_LINKS_BUTTON.checked) {
+        CAN_STOCK_LINKS_BUTTON.checked = true;
+        CANNOT_STOCK_LINKS_BUTTON.checked = false;
+    } else if (result === STOCK_LINKS_SETTING.OFF && !CANNOT_STOCK_LINKS_BUTTON.checked) {
+        CAN_STOCK_LINKS_BUTTON.checked = false;
+        CANNOT_STOCK_LINKS_BUTTON.checked = true;
+        /*
+                getChromeStorage(LINKS_KEY).then(
+                    links => {
+                        links = links[LINKS_KEY];
+                        let result = [];
+                        result.push(links[links.length - 1]);
+                        return result;
+                    }
+                )
+                    .then(
+                        response => {
+                            setLinks(response);
+                        }
+                    )
+                    */
     }
 }
 
 function setLastLinkOnly() {
     getChromeStorage(LINKS_KEY).then(
-        response => {
-            let links = response[LINKS_KEY];
+        links => {
+            links = links[LINKS_KEY];
+            if (links.length === 0)
+                return links;
+
             let result = [];
             result.push(links[links.length - 1]);
             return result;
@@ -164,7 +190,6 @@ function setLastLinkOnly() {
 
 function canStockLinks(event) {
     setSetting(STOCK_LINKS_SETTING.ON);
-    //checkStockLinksSetting(result);
 }
 
 function cannotStockLinks(event) {
@@ -193,8 +218,8 @@ function cannotStockLinks(event) {
 
 function copyLinks(event) {
     getChromeStorage(LINKS_KEY).then(
-        response => {
-            copyToClipBoard(response[LINKS_KEY]);
+        links => {
+            copyToClipBoard(links[LINKS_KEY]);
         }
     )
 }
@@ -227,10 +252,9 @@ function copyToClipBoard(links) {
     document.body.removeChild(ta);
 }
 
-function checkLink(index) {
-    let id = index;
-    let checkbox = document.getElementById(id);
-
+// event引数がなくても動く
+function checkLink(index, event) {
+    let checkbox = document.getElementById(index);
     if (event.target.type !== 'checkbox')
         checkbox.checked = checkbox.checked ? false : true;
 }
@@ -242,19 +266,20 @@ function selectLinks(event) {
     // linksが定義されてないと怒られる
     //let checkbox = document.linksTable.links[event.currentTarget.rowIndex];
 
-    checkLink(event.currentTarget.rowIndex);
+    checkLink(event.currentTarget.rowIndex, event);
 }
 
 function selectAllLinks(event) {
     for (let i = 1; i < TABLE.rows.length; i++) {
-        checkLink(i);
+        if (!document.getElementById(i).checked)
+            checkLink(i, event);
     }
 }
 
 function deleteLink(event) {
     getChromeStorage(LINKS_KEY).then(
-        response => {
-            let newLinks = response[LINKS_KEY].filter(
+        links => {
+            let newLinks = links[LINKS_KEY].filter(
                 function (value, index) {
                     if (!document.getElementById(index + 1).checked)
                         return value;

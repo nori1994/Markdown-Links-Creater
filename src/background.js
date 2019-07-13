@@ -15,8 +15,6 @@ chrome.contextMenus.onClicked.addListener(createLink);
 chrome.browserAction.onClicked.addListener(createLink);
 
 function createContextMenu() {
-    console.log("createContextMenu");
-
     chrome.contextMenus.create({
         id: 'createLinkMenu',
         title: 'Create Markdown Links',
