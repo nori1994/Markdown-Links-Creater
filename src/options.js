@@ -1,5 +1,8 @@
-const LINKS_KEY = 'links';
+/*
+const LINKS_STORAGE_KEY = 'links';
+const LASTID_STORAGE_KEY = 'lastId';
 const CAN_STOCK_LINKS_KEY = 'canStockLinks';
+*/
 const STOCK_LINKS_SETTING = {
     ON: true,
     OFF: false,
@@ -7,7 +10,6 @@ const STOCK_LINKS_SETTING = {
 };
 const NEWVALUE_KEY = 'newValue';
 const OLDVALUE_KEY = 'oldValue';
-const LASTID_STORAGE_KEY = 'lastId';
 
 window.onload = function () {
     // ページ読み込み時に実行したい処理
@@ -42,7 +44,7 @@ async function initialize() {
                 if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
                     setLastLinkOnly();
                 //changeActivationStockedLinksButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
-            } else if (changes[LINKS_KEY]) {
+            } else if (changes[LINKS_STORAGE_KEY]) {
                 setTable();
             }
             // TODO:テーブル追加・削除だけしたい
@@ -90,9 +92,9 @@ async function setTitle() {
 }
 
 async function setTable() {
-    getChromeStorage(LINKS_KEY).then(
+    getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
-            links = links[LINKS_KEY];
+            links = links[LINKS_STORAGE_KEY];
             // テーブルのクリア
             while (TABLE.rows[1]) TABLE.deleteRow(1);
 
@@ -182,9 +184,9 @@ function checkStockLinksSetting(result) {
 }
 
 function setLastLinkOnly() {
-    getChromeStorage(LINKS_KEY).then(
+    getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
-            links = links[LINKS_KEY];
+            links = links[LINKS_STORAGE_KEY];
             if (links.length === 0)
                 return links;
 
@@ -230,39 +232,11 @@ function cannotStockLinks(event) {
 }
 
 function copyLinks(event) {
-    getChromeStorage(LINKS_KEY).then(
+    getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
-            copyToClipBoard(links[LINKS_KEY]);
+            copyToClipBoard(links[LINKS_STORAGE_KEY]);
         }
     )
-}
-
-// TODO:関数共通化
-function copyToClipBoard(links) {
-    let text = '';
-    for (let i = 0; i < links.length; i++) {
-        console.log('set:' + links[i]);
-        text += (links[i] + '  \n');
-    }
-
-    // テキストエリアを作って値を入れる
-    let ta = document.createElement('textarea');
-    let st = ta.style;
-    st.position = 'fixed';
-    st.left = '-100%';
-    ta.value = text;
-
-    // 作成したテキストエリアをbody要素に追加
-    document.body.appendChild(ta);
-
-    // テキストエリアを選択
-    ta.select();
-
-    // クリップボードにコピー
-    let result = document.execCommand('copy');
-
-    // body要素から作成したテキストエリアを削除
-    document.body.removeChild(ta);
 }
 
 // event引数がなくても動く
@@ -297,9 +271,9 @@ function alignCheckAllLinksState(isSelectAllLinks) {
 }
 
 function deleteLink(event) {
-    getChromeStorage(LINKS_KEY).then(
+    getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
-            let newLinks = links[LINKS_KEY].filter(
+            let newLinks = links[LINKS_STORAGE_KEY].filter(
                 function (value, index) {
                     if (!document.getElementById(index + 1).checked)
                         return value;
@@ -339,7 +313,7 @@ function deleteLink(event) {
 
 async function setLinks(links) {
     let data = {};
-    data[LINKS_KEY] = links;
+    data[LINKS_STORAGE_KEY] = links;
     await setChromeStorage(data);
 }
 
@@ -347,19 +321,6 @@ async function resetLastID() {
     let data = {};
     data[LASTID_STORAGE_KEY] = 0;
     await setChromeStorage(data);
-}
-
-// TODO:非同期にするのだ
-function getChromeStorage(keys = null) {
-    return new Promise(resolve => {
-        chrome.storage.local.get(keys, resolve);
-    });
-}
-
-function setChromeStorage(items) {
-    return new Promise(resolve => {
-        chrome.storage.local.set(items, resolve);
-    });
 }
 
 //使わないのか？！
@@ -438,3 +399,43 @@ function tableClick(argEnv) {
 
     }
 }
+/*
+function copyToClipBoard(links) {
+    let text = '';
+    for (let i = 0; i < links.length; i++) {
+        console.log('set:' + links[i]);
+        text += (links[i] + '  \n');
+    }
+
+    // テキストエリアを作って値を入れる
+    let ta = document.createElement('textarea');
+    let st = ta.style;
+    st.position = 'fixed';
+    st.left = '-100%';
+    ta.value = text;
+
+    // 作成したテキストエリアをbody要素に追加
+    document.body.appendChild(ta);
+
+    // テキストエリアを選択
+    ta.select();
+
+    // クリップボードにコピー
+    let result = document.execCommand('copy');
+
+    // body要素から作成したテキストエリアを削除
+    document.body.removeChild(ta);
+}
+
+function getChromeStorage(keys = null) {
+    return new Promise(resolve => {
+        chrome.storage.local.get(keys, resolve);
+    });
+}
+
+function setChromeStorage(items) {
+    return new Promise(resolve => {
+        chrome.storage.local.set(items, resolve);
+    });
+}
+*/
