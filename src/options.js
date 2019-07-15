@@ -1,8 +1,3 @@
-/*
-const LINKS_STORAGE_KEY = 'links';
-const LASTID_STORAGE_KEY = 'lastId';
-const CAN_STOCK_LINKS_KEY = 'canStockLinks';
-*/
 const STOCK_LINKS_SETTING = {
     ON: true,
     OFF: false,
@@ -11,17 +6,17 @@ const STOCK_LINKS_SETTING = {
 const NEWVALUE_KEY = 'newValue';
 const OLDVALUE_KEY = 'oldValue';
 
+let TABLE;
+let CAN_STOCK_LINKS_BUTTON;
+let CANNOT_STOCK_LINKS_BUTTON;
+let ALL_SELECT_BUTTON;
+let ALL_DESELECT_BUTTON;
+let DELETE_BUTTON;
+
 window.onload = function () {
     // ページ読み込み時に実行したい処理
     initialize();
 }
-
-let TABLE;
-let ALL_SELECT_BUTTON;
-let ALL_DESELECT_BUTTON;
-let DELETE_BUTTON;
-let CAN_STOCK_LINKS_BUTTON;
-let CANNOT_STOCK_LINKS_BUTTON;
 
 async function initialize() {
     TABLE = document.getElementById("linksTable");
@@ -33,55 +28,46 @@ async function initialize() {
 
     CAN_STOCK_LINKS_BUTTON.addEventListener('click', canStockLinks);
     CANNOT_STOCK_LINKS_BUTTON.addEventListener('click', cannotStockLinks);
-    document.getElementById('copy').addEventListener('click', copyLinks);
     ALL_SELECT_BUTTON.addEventListener('click', selectAllLinks);
     ALL_DESELECT_BUTTON.addEventListener('click', deselectAllLinks);
     DELETE_BUTTON.addEventListener('click', deleteLink);
+    document.getElementById('copy').addEventListener('click', copyLinks);
 
     chrome.storage.onChanged.addListener
         ((changes) => {
             if (changes[CAN_STOCK_LINKS_KEY]) {
                 if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
                     setLastLinkOnly();
-                //changeActivationStockedLinksButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
             } else if (changes[LINKS_STORAGE_KEY]) {
                 setTable();
             }
-            // TODO:テーブル追加・削除だけしたい
-            //table.deleteRow(i);
         });
 
-
-    //checkStockLinksSetting(result);
     await setTitle();
     await setTable();
+
     let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
     await setSetting(setting[CAN_STOCK_LINKS_KEY]);
-    //await setActivationStockedLinksButtons();
 }
 
-// いらない
-async function setActivationStockedLinksButtons() {
-    let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
-    await setSetting(setting[CAN_STOCK_LINKS_KEY]);
-    changeActivationStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY]);
-}
+function setLastLinkOnly() {
+    getChromeStorage(LINKS_STORAGE_KEY).then(
+        links => {
+            links = links[LINKS_STORAGE_KEY];
+            if (links.length === 0)
+                return links;
 
-function changeActivationStockedLinksButtons(isActivation) {
-    let checkbox = document.getElementById(1);
-    if (checkbox) {
-        checkbox.disabled = !isActivation;
-
-        if (isActivation) {
-            TABLE.rows[1].addEventListener('click', selectLink);
-        } else {
-            TABLE.rows[1].removeEventListener('click', selectLink);
+            let result = [];
+            result.push(links[links.length - 1]);
+            return result;
         }
-    }
-
-    ALL_SELECT_BUTTON.disabled = !isActivation;
-    ALL_DESELECT_BUTTON.disabled = !isActivation;
-    DELETE_BUTTON.disabled = !isActivation;
+    )
+        .then(
+            response => {
+                setLinks(response);
+                resetLastID();
+            }
+        )
 }
 
 async function setTitle() {
@@ -105,11 +91,8 @@ async function setTable() {
 
                 // チェックボックスの作成
                 let checkbox = document.createElement('input');
-                //checkbox.type('checkbox')
                 checkbox.setAttribute("type", "checkbox");
-                var id = i + 1;
-                checkbox.setAttribute('id', id);
-                //checkbox.setAttribute('name', 'links');
+                checkbox.setAttribute('id', i + 1);
                 checkbox.setAttribute('click', deleteLink);
                 selecttd.appendChild(checkbox);
 
@@ -118,8 +101,6 @@ async function setTable() {
 
                 newtr.addEventListener('click', selectLink);
             }
-            // itemsは1からのオブジェクト
-            // TODO:chrome.storageのArray登録すれば無駄にfor文回さなくて済む
         }
     );
 }
@@ -131,7 +112,14 @@ async function setSetting(settingAfter) {
         }
     ).then(
         settingBefore => {
-            if (Object.keys(settingBefore).length === 0 && settingAfter == STOCK_LINKS_SETTING.NOSET) {
+            /*
+            | settingBefore/settingAfter | null or undefined | FALSE | TRUE |
+            |----------------------------|-------------------|-------|------|
+            | null or undefined          | FALSE             | FALSE | TRUE |
+            | FALSE                      | 不変              | 不変  | TRUE |
+            | TRUE                       | 不変              | FALSE | 不変 |
+            */
+            if (settingBefore == STOCK_LINKS_SETTING.NOSET && settingAfter == STOCK_LINKS_SETTING.NOSET) {
                 return setCanStockLinks(STOCK_LINKS_SETTING.OFF);
             } else if (settingBefore == STOCK_LINKS_SETTING.NOSET ||
                 (settingAfter != STOCK_LINKS_SETTING.NOSET && settingBefore !== settingAfter)) {
@@ -142,8 +130,7 @@ async function setSetting(settingAfter) {
         }
     ).then(
         result => {
-            checkStockLinksSetting(result);
-            changeActivationStockedLinksButtons(result);
+            changeActivationButtons(result);
         }
     )
 }
@@ -155,9 +142,29 @@ async function setCanStockLinks(setting) {
     return setting;
 }
 
-function checkStockLinksSetting(result) {
+function changeActivationButtons(isActivation) {
+    let checkbox = document.getElementById(1);
+    if (checkbox) {
+        checkbox.disabled = !isActivation;
+
+        if (isActivation) {
+            TABLE.rows[1].addEventListener('click', selectLink);
+        } else {
+            TABLE.rows[1].removeEventListener('click', selectLink);
+        }
+    }
+
+    ALL_SELECT_BUTTON.disabled = !isActivation;
+    ALL_DESELECT_BUTTON.disabled = !isActivation;
+    DELETE_BUTTON.disabled = !isActivation;
+
+    changeActivationSettingButtons(isActivation);
+}
+
+function changeActivationSettingButtons(result) {
     if (result !== STOCK_LINKS_SETTING.ON && result !== STOCK_LINKS_SETTING.OFF
-        && (!CAN_STOCK_LINKS_BUTTON.checked && !CANNOT_STOCK_LINKS_BUTTON.checked)) return;
+        && (!CAN_STOCK_LINKS_BUTTON.checked && !CANNOT_STOCK_LINKS_BUTTON.checked))
+        return;
 
     if (result === STOCK_LINKS_SETTING.ON && !CAN_STOCK_LINKS_BUTTON.checked) {
         CAN_STOCK_LINKS_BUTTON.checked = true;
@@ -165,42 +172,7 @@ function checkStockLinksSetting(result) {
     } else if (result === STOCK_LINKS_SETTING.OFF && !CANNOT_STOCK_LINKS_BUTTON.checked) {
         CAN_STOCK_LINKS_BUTTON.checked = false;
         CANNOT_STOCK_LINKS_BUTTON.checked = true;
-        /*
-                getChromeStorage(LINKS_KEY).then(
-                    links => {
-                        links = links[LINKS_KEY];
-                        let result = [];
-                        result.push(links[links.length - 1]);
-                        return result;
-                    }
-                )
-                    .then(
-                        response => {
-                            setLinks(response);
-                        }
-                    )
-                    */
     }
-}
-
-function setLastLinkOnly() {
-    getChromeStorage(LINKS_STORAGE_KEY).then(
-        links => {
-            links = links[LINKS_STORAGE_KEY];
-            if (links.length === 0)
-                return links;
-
-            let result = [];
-            result.push(links[links.length - 1]);
-            return result;
-        }
-    )
-        .then(
-            response => {
-                setLinks(response);
-                resetLastID();
-            }
-        )
 }
 
 function canStockLinks(event) {
@@ -208,27 +180,7 @@ function canStockLinks(event) {
 }
 
 function cannotStockLinks(event) {
-    /*
-    getChromeStorage(LINKS_KEY).then(
-        response => {
-            let links = response[LINKS_KEY];
-            let result = [];
-            result.push(links[links.length - 1]);
-            return result;
-        }
-    )
-        .then(
-            response => {
-                setLinks(response);
-            }
-        )
- 
-    document.getElementById("canStockedLinks").checked = false;
-    document.getElementById("cannotStockedLinks").checked = true;
-    */
-    // TODO:リンクの設定を上書き保存
     setSetting(STOCK_LINKS_SETTING.OFF);
-    //checkStockLinksSetting(result);
 }
 
 function copyLinks(event) {
@@ -239,7 +191,6 @@ function copyLinks(event) {
     )
 }
 
-// event引数がなくても動く
 function checkLink(index, event) {
     let checkbox = document.getElementById(index);
     if (event.target.type !== 'checkbox')
@@ -247,11 +198,6 @@ function checkLink(index, event) {
 }
 
 function selectLink(event) {
-    // trから直接checkbox制御はできなかった、
-    //let cell = event.currentTarget.cells[CHECKBOX_ROW_INDEX];
-    //cell.checkbox.checked = true;
-    // linksが定義されてないと怒られる
-    //let checkbox = document.linksTable.links[event.currentTarget.rowIndex];
     checkLink(event.currentTarget.rowIndex, event);
 }
 
@@ -287,28 +233,6 @@ function deleteLink(event) {
                 setLinks(response);
             }
         )
-    /*
-        for (let i = 1; i < TABLE.rows.length; i++) {
-            if (document.getElementById(i).checked) {
-            }
-        }
-    
-        let deleteIdIndexs = new Array();
-        for (let i = 0; i < CHECKBOX_IDS.length; i++) {
-            if (document.getElementById(CHECKBOX_IDS[i]).checked) {
-                // TODO:引数をArrayにする
-                chrome.storage.local.remove(CHECKBOX_IDS[i] + "");
-                deleteIdIndexs.push(i + 1);
-            }
-        }
-    
-        for (var i = 0; i < deleteIdIndexs.length; i++) {
-            //chrome.storage.localの変化でイベントハンドラでテーブル操作する
-            //TABLE.deleteRow(deleteIdIndexs[i]);
-            CHECKBOX_IDS.splice(deleteIdIndexs[i] - 1, 1);
-            // TODO:上の作業はcallbackにしてもいいかも
-        }
-        */
 }
 
 async function setLinks(links) {
@@ -322,120 +246,3 @@ async function resetLastID() {
     data[LASTID_STORAGE_KEY] = 0;
     await setChromeStorage(data);
 }
-
-//使わないのか？！
-function removeChromeStorage(keys) {
-    return new Promise(resolve => {
-        chrome.storage.local.remove(keys);
-    });
-}
-
-// ｈ１などのタグができる前に登録してしまう
-//document.getElementById('all-select').addEventListener('click',selectLink);
-/*
-// Saves options to chrome.storage
-function save_options() {
-    let color = document.getElementById('color').value;
-    let likesColor = document.getElementById('like').checked;
-    chrome.storage.sync.set({
-        favoriteColor: color,
-        likesColor: likesColor
-    }, function () {
-        // Update status to let user know options were saved.
-        let status = document.getElementById('status');
-        status.textContent = 'Options saved.';
-        setTimeout(function () {
-            status.textContent = '';
-        }, 750);
-    });
-}
- 
-// Restores select box and checkbox state using the preferences
-// stored in chrome.storage.
-function restore_options() {
-    // Use default value color = 'red' and likesColor = true.
-    chrome.storage.sync.get({
-        favoriteColor: 'red',
-        likesColor: true
-    }, function (items) {
-        document.getElementById('color').value = items.favoriteColor;
-        document.getElementById('like').checked = items.likesColor;
-    });
-}
-document.addEventListener('DOMContentLoaded', restore_options);
-document.getElementById('save').addEventListener('click',
-    save_options);
-*/
-/*
-    "options_ui": {
-        "page": "options.html",
-        "chrome_style": true,
-        "open_in_tab": false
-    },
-    */
-
-function tableClick(argEnv) {
-    // ===================================================
-    //  ○ クリック時の位置と値の取得 ○
-    //
-    //  tableのクリック位置と値を取得するサンプルです
-    //  （行と列はTRなども含んだ、0からの値です）
-    // ====================================================
-    let wOut = '';
-
-    // --- クリックされたエレメントを取得 ------------
-    let wElement = (argEnv.srcElement || argEnv.target);
-
-    // --- TDのみ対象とする --------------------------
-    if (wElement.tagName.toUpperCase() == 'TD') {
-
-        // --- 行・列・値の取得＆編集 ------------------
-        wOut += '行:' + wElement.cellIndex + '&nbsp;&nbsp;';
-        wOut += '列:' + wElement.parentNode.sectionRowIndex + '&nbsp;&nbsp;';
-        wOut += '値:' + wElement.innerHTML;
-
-        // --- 結果表示 ------------------------------
-        document.getElementById("clickKekka").innerHTML = wOut;
-
-    }
-}
-/*
-function copyToClipBoard(links) {
-    let text = '';
-    for (let i = 0; i < links.length; i++) {
-        console.log('set:' + links[i]);
-        text += (links[i] + '  \n');
-    }
-
-    // テキストエリアを作って値を入れる
-    let ta = document.createElement('textarea');
-    let st = ta.style;
-    st.position = 'fixed';
-    st.left = '-100%';
-    ta.value = text;
-
-    // 作成したテキストエリアをbody要素に追加
-    document.body.appendChild(ta);
-
-    // テキストエリアを選択
-    ta.select();
-
-    // クリップボードにコピー
-    let result = document.execCommand('copy');
-
-    // body要素から作成したテキストエリアを削除
-    document.body.removeChild(ta);
-}
-
-function getChromeStorage(keys = null) {
-    return new Promise(resolve => {
-        chrome.storage.local.get(keys, resolve);
-    });
-}
-
-function setChromeStorage(items) {
-    return new Promise(resolve => {
-        chrome.storage.local.set(items, resolve);
-    });
-}
-*/
