@@ -1,37 +1,84 @@
 @charset "UTF-8";
+body > div {
+  margin: 2em;
+  position: relative;
+}
+
+body > div > h1, h2 {
+  position: relative;
+  left: -1em
+}
+
+h1, h2 {
+	margin: 10px;
+}
+
+h2 {
+	margin-top: 18px;
+}
+
+.about {
+  display: -webkit-box;
+}
+
+.text {
+  font-size: 9pt;
+}
+
+.importantText{
+  color: rgb(195, 12, 35);
+  font-weight: bold;
+}
+
+.buttonArea button {
+  margin-left: 10px;
+}
+
+.buttonArea #delete{
+  margin-left: 50px;
+}
+
 .radioArea input[type="radio"] {
-  width         : 10pt;        /* 大きさ：横 */
-  height        : 10pt;        /* 大きさ：縦 */
-  vertical-align: top;         /* 並び位置   */
+  width         : 10pt;
+  height        : 10pt;
+  vertical-align: top;
+  margin-left: 10px;
 }
- /* --- テーブル全体のスタイル指定 --------------- */
+
  .tableArea {
-  margin         : auto;             /* 自動位置   */
-  border-collapse: collapse;         /* 境界線結合 */
-  border-spacing : 0;                /* 罫線間余白 */
-  font-size      : 9pt;              /* 文字サイズ */
-  background     : #ffffff;          /* テーブル全体の背景色 */
+  margin         : auto;
+  border-collapse: collapse;
+  border-spacing : 0;
+  font-size      : 9pt;
+  background     : #ffffff;
+  width: 100%;
+  table-layout: fixed;
 }
- /* --- ヘッダーのスタイル指定 ------------------- */
+
 .tableArea th {
-  text-align    : center;            /* 文字位置  */
-  padding       : 5px;               /* 余白      */
-  border        : 1px #666666 solid; /* 罫線      */
-  background    : #cccccc;           /* 背景色    */
+  text-align    : center;
+  padding       : 5px;
+  border        : 1px #666666 solid;
+  background    : #cccccc;
 }
- /* --- テーブルのスタイル指定 ----------------------- */
+
+.tableArea th.select{
+  width: 35px;
+}
+
 .tableArea td {
-  padding       : 5px;               /* 余白      */
-  border        : 1px #666666 solid; /* 罫線      */
-  cursor        : pointer;           /* カーソル  */
+  padding       : 5px;
+  border        : 1px #666666 solid;
+  cursor        : pointer;
+  width          : 100%;
+  word-wrap: break-word;
 }
- /* --- セルにカーソルが乗ったとき --------------- */
+
+.tableArea td:nth-of-type(1) {
+  text-align: center;
+}
+
 .tableArea tr:hover {
-  background    : #cccccc;           /* 背景色    */
-  color         : #000000;           /* 文字色    */
-}
- /* --- チェックボックスがチェックされたとき(使われてない) --------------- */
-.tableArea input[type="checkbox"]:checked + .tableArea tr {
-  background    : #ff7f50;           /* 背景色    */
-  color         : #ffffff;           /* 文字色    */
+  background    : #cccccc;
+  color         : #000000;
 }

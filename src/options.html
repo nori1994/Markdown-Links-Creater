@@ -3,22 +3,26 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <title id="title"></title>
         <link rel="stylesheet" href="options.css">
-        <script src="options.js"></script>
-        <title>Create Markdown Links</title>
-
+        <script language="javascript" src="options.js"></script>
     </head>
     <body>
-        <h1 id="name"></h1><h2 id="version"></h2>
+        <div class="about">
+            <h1 id="name"></h1><h2 id="version"></h2>
+        </div>
         <div>
             <h2>Setting</h2>
-            <p class="text">Set wheter to stock Markdown links to
-                ClipBoard.</p>
-            <p class="text">ONにしている間にリンクを作成した場合、ストックしたリンクとして保存されます。
-                OFFの時にリンクを作成してもストックしたリンク一覧に追加はされません。</p>
-            <p class="text">
-                ONからOFFにした時は、最近作成したリンクがクリップボードにコピーされています。ストックされているリンクは勝手に削除されません。
-            </p>
+            <p class="text">Choose created link to stock on “Stocked Links” or
+                not.</p>
+            <p class="text">ON: When you do “Create Markdown Links,” the link
+                just created is added to the bottom of “Stocked Links” (below
+                list) then all links on “Stocked Links” copy to ClipBoard.</p>
+            <p class="text">OFF: When you do “Create Markdown Links,” only the
+                link just created copy to ClipBoard.</p>
+            <p class="text importantText">When switching from ON to OFF, only
+                the most recently created link remains as stocked link, and the
+                other links disappear.</p>
             <div class="radioArea" id="setting">
                 <label for="canStockLinks">
                     <input type="radio" name="radio" id="canStockLinks">ON
@@ -30,24 +34,29 @@
         </div>
         <div>
             <h2>Stocked Links</h2>
-            <p class="text">Manage the list of stocked Markdown Links to
-                ChipBoard.</p>
-            <button id="copy">Copy Stocked Links</button>
-            <button id="allSelect">All Select</button>
-            <button id="allDeselect">All Deselect</button>
+            <p class="text">Edit the “Stocked Links” to choose which links
+                copying to ClipBoard.</p>
+            <p class="text">If you push the "Copy to ClipBoard" button, all
+                links on “Stocked Links” copy to ClipBoard.</p>
+            <div class="buttonArea">
+                <p>
+                    <button id="copy">Copy to ClipBoard</button>
+                </p>
+                <p>
+                    <button id="allSelect">All Select</button>
+                    <button id="allDeselect">All Deselect</button>
+                    <button id="delete">Delete</button>
+                </p>
+            </div>
             <table class="tableArea" id="linksTable">
                 <thead>
                     <tr>
-                        <th>Selected</th>
-                        <th>Markdown Link</th>
+                        <th class="select">Select</th>
+                        <th>Link</th>
                     </tr>
                 </thead>
-                <tbody id="links"></tbody>
+                <tbody id="linksList"></tbody>
             </table>
-
-            <!--<div id="status"></div>-->
-            <button id="delete">Deleted</button>
-
         </div>
     </body>
 </html>

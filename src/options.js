@@ -84,6 +84,7 @@ function changeActivationStockedLinksButtons(isActivation) {
 
 async function setTitle() {
     let manifest = chrome.runtime.getManifest();
+    document.getElementById("title").innerText = manifest.name;
     document.getElementById("name").innerText = manifest.name;
     document.getElementById("version").innerText = manifest.version;
 }
@@ -97,7 +98,7 @@ async function setTable() {
 
             // テーブルの生成
             for (let i = 0; i < links.length; i++) {
-                let newtr = TABLE.insertRow(TABLE.rows.length);
+                let newtr = TABLE.getElementsByTagName('tbody')[0].insertRow(i);
                 let selecttd = newtr.insertCell(newtr.cells.length);
 
                 // チェックボックスの作成

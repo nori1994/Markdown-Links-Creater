@@ -15,10 +15,7 @@
     },
     "options_page": "options.html",
     "permissions": [
-        "tabs",
         "contextMenus",
-        "notifications",
-        "storage",
-        "clipboardRead"
+        "storage"
     ]
 }
