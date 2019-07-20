@@ -12,6 +12,7 @@ let CANNOT_STOCK_LINKS_BUTTON;
 let ALL_SELECT_BUTTON;
 let ALL_DESELECT_BUTTON;
 let DELETE_BUTTON;
+let CHECKBOX_IDS = [];
 
 window.onload = function () {
     // ページ読み込み時に実行したい処理
@@ -39,12 +40,13 @@ async function initialize() {
                 if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
                     setLastLinkOnly();
             } else if (changes[LINKS_STORAGE_KEY]) {
-                setTable();
+                setTable(false);
+                //changeTable(changes[LINKS_STORAGE_KEY][NEWVALUE_KEY], changes[LINKS_STORAGE_KEY][OLDVALUE_KEY]);
             }
         });
 
     await setTitle();
-    await setTable();
+    await setTable(true);
 
     let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
     await setSetting(setting[CAN_STOCK_LINKS_KEY]);
@@ -77,7 +79,86 @@ async function setTitle() {
     document.getElementById("version").innerText = manifest.version;
 }
 
-async function setTable() {
+async function changeTable(newValues, oldValues) {
+    if (newValues.length > oldValues.length) {
+        /*
+        var urls = newValues.filter(function (value, index, array) {
+            if (oldValues.indexOf(value) == -1)
+                return index;
+        });
+*/
+        // 新しくリンクを追加
+        let items = [];
+        for (let i = oldValues.length - 1; i < newValues.length - oldValues.length; i++) {
+            items.push([i, newValues[i]]);
+        }
+        /* 同じURLだとindexが追加されない
+        let indexs = [];
+        for (let i = 0; i < newValues.length; i++) {
+            if (oldValues.indexOf(newValues[i]) == -1)
+                indexs.push([i, newValues[i]]);
+        }
+*/
+        if (indexs.length !== 0) {
+            for (let i = 0; i < indexs.length; i++) {
+                let [index, url] = indexs[i];
+                addTr(index, url);
+            }
+        }
+    } else if (newValues.length < oldValues.length) {
+        let deleteIndex = [];
+        for (let i = 0; i < oldValues.length; i++) {
+            if (newValues.indexOf(oldValues[i]) == -1)
+                deleteIndex.push(i);
+        }
+
+        // 後ろから削除
+        if (deleteIndex.length !== 0) {
+            for (let i = deleteIndex.length - 1; i >= 0; i--) {
+                TABLE.getElementsByTagName('tbody')[0].deleteRow(deleteIndex[i]);
+            }
+        }
+    } else {
+        //TODO:削除する
+
+        let indexs = [];
+        for (let i = 0; i < newValues.length; i++) {
+            if (oldValues.indexOf(newValues[i]) == -1)
+                indexs.push([i, newValues[i]]);
+        }
+
+        if (indexs.length !== 0 && urls.length === indexs.length) {
+            for (let i = 0; i < indexs.length; i++) {
+                addTr(indexs[i], urls[i]);
+            }
+        }
+    }
+}
+
+/**
+ * 行の追加
+ * @param {追加する行。0開始} index 
+ * @param {行で表示するテキスト} text 
+ */
+function addTr(index, text) {
+    let newtr = TABLE.getElementsByTagName('tbody')[0].insertRow(index);
+    let selecttd = newtr.insertCell(newtr.cells.length);
+
+    // チェックボックスの作成
+    let checkbox = document.createElement('input');
+    checkbox.setAttribute("type", "checkbox");
+    //CHECKBOX_IDS.push(i + 1);
+    checkbox.setAttribute('id', index + 1);
+    checkbox.setAttribute('click', deleteLink);
+    selecttd.appendChild(checkbox);
+
+    let linktd = newtr.insertCell(newtr.cells.length);
+    linktd.innerHTML = text;
+
+    newtr.addEventListener('click', selectLink);
+}
+
+async function setTable(isInitialize) {
     getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
             links = links[LINKS_STORAGE_KEY];
@@ -86,23 +167,33 @@ async function setTable() {
 
             // テーブルの生成
             for (let i = 0; i < links.length; i++) {
-                let newtr = TABLE.getElementsByTagName('tbody')[0].insertRow(i);
-                let selecttd = newtr.insertCell(newtr.cells.length);
-
-                // チェックボックスの作成
-                let checkbox = document.createElement('input');
-                checkbox.setAttribute("type", "checkbox");
-                checkbox.setAttribute('id', i + 1);
-                checkbox.setAttribute('click', deleteLink);
-                selecttd.appendChild(checkbox);
-
-                let linktd = newtr.insertCell(newtr.cells.length);
-                linktd.innerHTML = links[i];
-
-                newtr.addEventListener('click', selectLink);
+                addTr(i, links[i]);
             }
         }
     );
+
+    // TODO:チェック状態の作り直し
+    // OFFの時、チェックボックスのチェック状態を半輝度にする
+    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
+        setting => {
+            if (STOCK_LINKS_SETTING.OFF === setting[CAN_STOCK_LINKS_KEY]) {
+                changeActivationCheckbox(false);
+            }
+        }
+    )
+}
+
+function changeActivationCheckbox(isActivation) {
+    let checkbox = document.getElementById(1);
+    if (checkbox) {
+        checkbox.disabled = !isActivation;
+
+        if (isActivation) {
+            TABLE.rows[1].addEventListener('click', selectLink);
+        } else {
+            TABLE.rows[1].removeEventListener('click', selectLink);
+        }
+    }
 }
 
 async function setSetting(settingAfter) {
@@ -143,16 +234,7 @@ async function setCanStockLinks(setting) {
 }
 
 function changeActivationButtons(isActivation) {
-    let checkbox = document.getElementById(1);
-    if (checkbox) {
-        checkbox.disabled = !isActivation;
-
-        if (isActivation) {
-            TABLE.rows[1].addEventListener('click', selectLink);
-        } else {
-            TABLE.rows[1].removeEventListener('click', selectLink);
-        }
-    }
+    changeActivationCheckbox(isActivation);
 
     ALL_SELECT_BUTTON.disabled = !isActivation;
     ALL_DESELECT_BUTTON.disabled = !isActivation;
