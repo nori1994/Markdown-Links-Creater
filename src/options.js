@@ -89,11 +89,22 @@ function setLastLinkOnly() {
         }
     )
         .then(
-            response => {
-                setLinks(response);
+            links => {
+                setLinks(links);
                 resetLastID();
+
+                // 再度チェックしてチェック状態を解除
+                checkCheckedCheckboxsAgain();
             }
         )
+}
+
+function checkCheckedCheckboxsAgain() {
+    if (CHECKED_CHECKBOX_IDS.length !== 0) {
+        for (let i = 0; i < CHECKED_CHECKBOX_IDS.length; i++) {
+            checkLink(CHECKED_CHECKBOX_IDS[i]);
+        }
+    }
 }
 
 async function setTitle() {
@@ -144,11 +155,7 @@ async function setTable(isInitialize) {
             }
 
             // チェック状態の作り直し
-            if (CHECKED_CHECKBOX_IDS.length !== 0) {
-                for (let i = 0; i < CHECKED_CHECKBOX_IDS.length; i++) {
-                    checkLink(CHECKED_CHECKBOX_IDS[i]);
-                }
-            }
+            checkCheckedCheckboxsAgain();
 
             // リンクが0の場合、ボタンを非活性にする
             if (isInitialize && links.length == 0)
