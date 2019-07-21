@@ -226,12 +226,7 @@ function checkLink(index, type) {
         let checkbox = document.getElementById(index);
         checkbox.checked = checkbox.checked ? false : true;
 
-        if (checkbox.checked) {
-            if (CHECKED_CHECKBOX_IDS.indexOf(index) === -1)
-                CHECKED_CHECKBOX_IDS.push(index);
-        } else {
-            CHECKED_CHECKBOX_IDS = CHECKED_CHECKBOX_IDS.filter(n => n !== index);
-        }
+        setCheckedCheckboxIDs(checkbox.checked, index);
     }
 }
 
@@ -262,7 +257,7 @@ function deleteLink(event) {
                     if (!document.getElementById(index + 1).checked) {
                         return value;
                     } else {
-                        CHECKED_CHECKBOX_IDS = CHECKED_CHECKBOX_IDS.filter(n => n !== index + 1);
+                        setCheckedCheckboxIDs(false, index + 1);
                     }
                 });
 
@@ -274,6 +269,15 @@ function deleteLink(event) {
                 setLinks(newLinks);
             }
         )
+}
+
+function setCheckedCheckboxIDs(isCheck, index) {
+    if (isCheck) {
+        if (CHECKED_CHECKBOX_IDS.indexOf(index) === -1)
+            CHECKED_CHECKBOX_IDS.push(index);
+    } else {
+        CHECKED_CHECKBOX_IDS = CHECKED_CHECKBOX_IDS.filter(n => n !== index);
+    }
 }
 
 async function setLinks(links) {
