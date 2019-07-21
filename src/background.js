@@ -20,12 +20,6 @@ function createContextMenu() {
 }
 
 function createLink(info, tab) {
-    /*
-    var script = document.createElement("script");
-    script.src = "main.js";
-    var head = document.getElementsByTagName("head");
-    head[0].appendChild(script);
-*/
     let url;
     if (info.mediaType === 'image') {
         url = info.srcUrl;
