@@ -41,6 +41,8 @@ async function initialize() {
     chrome.storage.onChanged.addListener
         ((changes) => {
             if (changes[CAN_STOCK_LINKS_KEY]) {
+                changeActivationButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
+
                 if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
                     setLastLinkOnly();
             } else if (changes[LINKS_STORAGE_KEY]) {
@@ -70,7 +72,7 @@ async function initialize() {
 
     // 設定状態でリンク一覧の状態も変わるため先に設定する
     let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
-    await setSetting(setting[CAN_STOCK_LINKS_KEY]);
+    await setSetting(setting[CAN_STOCK_LINKS_KEY], true);
 
     await setTitle();
     await setTable(true);
@@ -177,7 +179,7 @@ function changeActivationCheckbox(isActivation) {
     }
 }
 
-async function setSetting(settingAfter) {
+async function setSetting(settingAfter, isInitialize) {
     getChromeStorage(STOCK_LINKS_SETTING).then(
         settingBefore => {
             settingBefore = settingBefore[CAN_STOCK_LINKS_KEY];
@@ -199,7 +201,8 @@ async function setSetting(settingAfter) {
         }
     ).then(
         setting => {
-            changeActivationButtons(setting);
+            if (isInitialize)
+                changeActivationButtons(setting);
         }
     )
 }
@@ -245,11 +248,11 @@ function changeStockedLinksButtons(isActivation, isNoLink) {
 }
 
 function canStockLinks(event) {
-    setSetting(STOCK_LINKS_SETTING.ON);
+    setSetting(STOCK_LINKS_SETTING.ON, false);
 }
 
 function cannotStockLinks(event) {
-    setSetting(STOCK_LINKS_SETTING.OFF);
+    setSetting(STOCK_LINKS_SETTING.OFF, false);
 }
 
 function copyLinks(event) {
