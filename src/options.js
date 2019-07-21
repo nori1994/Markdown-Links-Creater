@@ -12,6 +12,7 @@ let CANNOT_STOCK_LINKS_BUTTON;
 let ALL_SELECT_BUTTON;
 let ALL_DESELECT_BUTTON;
 let DELETE_BUTTON;
+let COPY_BUTTON;
 let CHECKED_CHECKBOX_IDS = [];
 
 window.onload = function () {
@@ -26,13 +27,14 @@ async function initialize() {
     ALL_SELECT_BUTTON = document.getElementById('allSelect');
     ALL_DESELECT_BUTTON = document.getElementById('allDeselect');
     DELETE_BUTTON = document.getElementById('delete');
+    COPY_BUTTON = document.getElementById('copy');
 
     CAN_STOCK_LINKS_BUTTON.addEventListener('click', canStockLinks);
     CANNOT_STOCK_LINKS_BUTTON.addEventListener('click', cannotStockLinks);
     ALL_SELECT_BUTTON.addEventListener('click', selectAllLinks);
     ALL_DESELECT_BUTTON.addEventListener('click', deselectAllLinks);
     DELETE_BUTTON.addEventListener('click', deleteLink);
-    document.getElementById('copy').addEventListener('click', copyLinks);
+    COPY_BUTTON.addEventListener('click', copyLinks);
 
     CHECKED_CHECKBOX_IDS = [];
 
@@ -43,14 +45,35 @@ async function initialize() {
                     setLastLinkOnly();
             } else if (changes[LINKS_STORAGE_KEY]) {
                 setTable(false);
+
+                // リンク0から変わった時は再度ボタンを設定する
+                if (changes[LINKS_STORAGE_KEY][OLDVALUE_KEY].length === 0) {
+                    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
+                        setting => {
+                            changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], false);
+
+                        }
+                    )
+                }
+
+                // リンク0に変わった時はボタンを非活性にする
+                if (changes[LINKS_STORAGE_KEY][NEWVALUE_KEY].length === 0) {
+                    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
+                        setting => {
+                            changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], true);
+
+                        }
+                    )
+                }
             }
         });
 
-    await setTitle();
-    await setTable(true);
-
+    // 設定状態でリンク一覧の状態も変わるため先に設定する
     let setting = await getChromeStorage(CAN_STOCK_LINKS_KEY);
     await setSetting(setting[CAN_STOCK_LINKS_KEY]);
+
+    await setTitle();
+    await setTable(true);
 }
 
 function setLastLinkOnly() {
@@ -126,6 +149,10 @@ async function setTable(isInitialize) {
                     checkLink(CHECKED_CHECKBOX_IDS[i]);
                 }
             }
+
+            // リンクが0の場合、ボタンを非活性にする
+            if (isInitialize && links.length == 0)
+                changeStockedLinksButtons(setting, true);
         }
     );
 }
@@ -144,12 +171,9 @@ function changeActivationCheckbox(isActivation) {
 }
 
 async function setSetting(settingAfter) {
-    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
+    getChromeStorage(STOCK_LINKS_SETTING).then(
         settingBefore => {
-            return settingBefore[CAN_STOCK_LINKS_KEY];
-        }
-    ).then(
-        settingBefore => {
+            settingBefore = settingBefore[CAN_STOCK_LINKS_KEY];
             /*
             | settingBefore/settingAfter | null or undefined | FALSE | TRUE |
             |----------------------------|-------------------|-------|------|
@@ -167,8 +191,8 @@ async function setSetting(settingAfter) {
             }
         }
     ).then(
-        result => {
-            changeActivationButtons(result);
+        setting => {
+            changeActivationButtons(setting);
         }
     )
 }
@@ -183,9 +207,11 @@ async function setCanStockLinks(setting) {
 function changeActivationButtons(isActivation) {
     changeActivationCheckbox(isActivation);
 
-    ALL_SELECT_BUTTON.disabled = !isActivation;
-    ALL_DESELECT_BUTTON.disabled = !isActivation;
-    DELETE_BUTTON.disabled = !isActivation;
+    getChromeStorage(LINKS_STORAGE_KEY).then(
+        links => {
+            changeStockedLinksButtons(isActivation, links[LINKS_STORAGE_KEY].length === 0);
+        }
+    )
 
     changeActivationSettingButtons(isActivation);
 }
@@ -202,6 +228,13 @@ function changeActivationSettingButtons(result) {
         CAN_STOCK_LINKS_BUTTON.checked = false;
         CANNOT_STOCK_LINKS_BUTTON.checked = true;
     }
+}
+
+function changeStockedLinksButtons(isActivation, isNoLink) {
+    ALL_SELECT_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
+    ALL_DESELECT_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
+    DELETE_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
+    COPY_BUTTON.disabled = isNoLink;
 }
 
 function canStockLinks(event) {
@@ -263,12 +296,11 @@ function deleteLink(event) {
 
             return newLinks;
         }
+    ).then(
+        newLinks => {
+            setLinks(newLinks);
+        }
     )
-        .then(
-            newLinks => {
-                setLinks(newLinks);
-            }
-        )
 }
 
 function setCheckedCheckboxIDs(isCheck, index) {
