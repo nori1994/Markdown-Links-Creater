@@ -2,15 +2,15 @@
     "manifest_version": 2,
     "name": "Markdown Links Creater",
     "version": "0.1",
-    "description": "Copy the selected text as markdown.",
+    "description": "Create link as Markdown using selected text or title of tab, and copy created Link. If set on the option page, you can stock the created link",
     "icons": {},
     "browser_action": {
         "default_icon": {}
     },
     "background": {
         "scripts": [
-            "common.js",
-            "background.js"
+            "js/common.js",
+            "js/background.js"
         ],
         "persistent": false
     },
