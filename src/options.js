@@ -1,7 +1,7 @@
 const STOCK_LINKS_SETTING = {
     ON: true,
     OFF: false,
-    NOSET: null
+    UNSET: null
 };
 const NEWVALUE_KEY = 'newValue';
 const OLDVALUE_KEY = 'oldValue';
@@ -100,7 +100,7 @@ function setLastLinkOnly() {
                 resetLastID();
 
                 // 再度チェックしてチェック状態を解除
-                checkCheckedCheckboxs();
+                checkALLCheckedCheckboxs();
             }
         )
 }
@@ -108,7 +108,7 @@ function setLastLinkOnly() {
 /**
  * チェック状態のチェックボックスをクリックする
  */
-function checkCheckedCheckboxs() {
+function checkALLCheckedCheckboxs() {
     if (CHECKED_CHECKBOX_IDS.length !== 0) {
         for (let i = 0; i < CHECKED_CHECKBOX_IDS.length; i++) {
             checkLink(CHECKED_CHECKBOX_IDS[i]);
@@ -164,7 +164,7 @@ async function setTable(isInitialize) {
             }
 
             // チェック状態の作り直し
-            checkCheckedCheckboxs();
+            checkALLCheckedCheckboxs();
 
             // リンクが0の場合、ボタンを非活性にする
             if (isInitialize && links.length == 0)
@@ -202,14 +202,14 @@ async function setSetting(settingAfter, isInitialize) {
             /*
             | settingBefore/settingAfter | null or undefined | FALSE | TRUE |
             |----------------------------|-------------------|-------|------|
-            | null or undefined          | FALSE             | FALSE | TRUE |
+            | null or undefined          | TRUE             | FALSE | TRUE |
             | FALSE                      | 不変              | 不変  | TRUE |
             | TRUE                       | 不変              | FALSE | 不変 |
             */
-            if (settingBefore == STOCK_LINKS_SETTING.NOSET && settingAfter == STOCK_LINKS_SETTING.NOSET) {
-                return setCanStockLinks(STOCK_LINKS_SETTING.OFF);
-            } else if (settingBefore == STOCK_LINKS_SETTING.NOSET ||
-                (settingAfter != STOCK_LINKS_SETTING.NOSET && settingBefore !== settingAfter)) {
+            if (settingBefore == STOCK_LINKS_SETTING.UNSET && settingAfter == STOCK_LINKS_SETTING.UNSET) {
+                return setCanStockLinks(STOCK_LINKS_SETTING.ON);
+            } else if (settingBefore == STOCK_LINKS_SETTING.UNSET ||
+                (settingAfter != STOCK_LINKS_SETTING.UNSET && settingBefore !== settingAfter)) {
                 return setCanStockLinks(settingAfter);
             } else {
                 return settingBefore;
@@ -231,7 +231,7 @@ async function setCanStockLinks(setting) {
 }
 
 /**
- * チェックボックスの活性状態を変更する
+ * ボタンの活性状態を変更する
  * @param {活性か非活性か} isActivation 
  */
 function changeActivationButtons(isActivation) {

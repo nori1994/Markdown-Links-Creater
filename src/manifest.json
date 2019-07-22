@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Markdown Links Creater",
     "version": "0.1",
-    "description": "Create link as Markdown using selected text or title of tab, and copy created Link. If set on the option page, you can stock the created link",
+    "description": "Create link as Markdown using selected text or title of tab, and stocke created link. Then copy stocked Link to ClipBoard.",
     "icons": {},
     "browser_action": {
         "default_icon": {}

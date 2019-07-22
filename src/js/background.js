@@ -61,7 +61,7 @@ function saveLink(text) {
 
             links.push(text);
 
-            return saveStorage(lastId, links);
+            return saveStorage(lastId, links, (canStockLinks == null));
         }
     )
         .then(
@@ -76,7 +76,7 @@ function saveLink(text) {
         )
 }
 
-async function saveStorage(lastId, links) {
+async function saveStorage(lastId, links, isUnsetCanStockLinks) {
     let linksSetting = {};
     linksSetting[LINKS_STORAGE_KEY] = links;
 
@@ -85,4 +85,11 @@ async function saveStorage(lastId, links) {
 
     await setChromeStorage(linksSetting);
     await setChromeStorage(lastIdSetting);
+
+    // CAN_STOCK_LINKS_KEYが未設定の場合、ONで設定する
+    if (isUnsetCanStockLinks) {
+        let canStockLinks = {};
+        canStockLinks[CAN_STOCK_LINKS_KEY] = true;
+        await setChromeStorage(canStockLinks);
+    }
 }
