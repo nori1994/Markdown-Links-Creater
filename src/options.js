@@ -110,7 +110,8 @@ function setLastLinkOnly() {
  */
 function checkALLCheckedCheckboxs() {
     if (CHECKED_CHECKBOX_IDS.length !== 0) {
-        for (let i = 0; i < CHECKED_CHECKBOX_IDS.length; i++) {
+        let checkTimes = CHECKED_CHECKBOX_IDS.length;
+        for (let i = 0; i < checkTimes; i++) {
             checkLink(CHECKED_CHECKBOX_IDS[i]);
         }
     }
