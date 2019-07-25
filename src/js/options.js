@@ -1,7 +1,7 @@
 const STOCK_LINKS_SETTING = {
     ON: true,
     OFF: false,
-    NOSET: null
+    UNSET: null
 };
 const NEWVALUE_KEY = 'newValue';
 const OLDVALUE_KEY = 'oldValue';
@@ -78,6 +78,10 @@ async function initialize() {
     await setTable(true);
 }
 
+/**
+ * 最後に作成したリンクのみをリンクとして設定する
+ * ONからOFFにした時に使う
+ */
 function setLastLinkOnly() {
     getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
@@ -96,14 +100,18 @@ function setLastLinkOnly() {
                 resetLastID();
 
                 // 再度チェックしてチェック状態を解除
-                checkCheckedCheckboxsAgain();
+                checkALLCheckedCheckboxs();
             }
         )
 }
 
-function checkCheckedCheckboxsAgain() {
+/**
+ * チェック状態のチェックボックスをクリックする
+ */
+function checkALLCheckedCheckboxs() {
     if (CHECKED_CHECKBOX_IDS.length !== 0) {
-        for (let i = 0; i < CHECKED_CHECKBOX_IDS.length; i++) {
+        let checkTimes = CHECKED_CHECKBOX_IDS.length;
+        for (let i = 0; i < checkTimes; i++) {
             checkLink(CHECKED_CHECKBOX_IDS[i]);
         }
     }
@@ -157,7 +165,7 @@ async function setTable(isInitialize) {
             }
 
             // チェック状態の作り直し
-            checkCheckedCheckboxsAgain();
+            checkALLCheckedCheckboxs();
 
             // リンクが0の場合、ボタンを非活性にする
             if (isInitialize && links.length == 0)
@@ -166,6 +174,10 @@ async function setTable(isInitialize) {
     );
 }
 
+/**
+ * チェックボックスの活性状態を変更する
+ * @param {活性か非活性か} isActivation 
+ */
 function changeActivationCheckbox(isActivation) {
     let checkbox = document.getElementById(1);
     if (checkbox) {
@@ -179,6 +191,11 @@ function changeActivationCheckbox(isActivation) {
     }
 }
 
+/**
+ * 値を設定する
+ * @param {設定したい値} settingAfter 
+ * @param {初回起動かどうか} isInitialize 
+ */
 async function setSetting(settingAfter, isInitialize) {
     getChromeStorage(STOCK_LINKS_SETTING).then(
         settingBefore => {
@@ -186,14 +203,14 @@ async function setSetting(settingAfter, isInitialize) {
             /*
             | settingBefore/settingAfter | null or undefined | FALSE | TRUE |
             |----------------------------|-------------------|-------|------|
-            | null or undefined          | FALSE             | FALSE | TRUE |
+            | null or undefined          | TRUE             | FALSE | TRUE |
             | FALSE                      | 不変              | 不変  | TRUE |
             | TRUE                       | 不変              | FALSE | 不変 |
             */
-            if (settingBefore == STOCK_LINKS_SETTING.NOSET && settingAfter == STOCK_LINKS_SETTING.NOSET) {
-                return setCanStockLinks(STOCK_LINKS_SETTING.OFF);
-            } else if (settingBefore == STOCK_LINKS_SETTING.NOSET ||
-                (settingAfter != STOCK_LINKS_SETTING.NOSET && settingBefore !== settingAfter)) {
+            if (settingBefore == STOCK_LINKS_SETTING.UNSET && settingAfter == STOCK_LINKS_SETTING.UNSET) {
+                return setCanStockLinks(STOCK_LINKS_SETTING.ON);
+            } else if (settingBefore == STOCK_LINKS_SETTING.UNSET ||
+                (settingAfter != STOCK_LINKS_SETTING.UNSET && settingBefore !== settingAfter)) {
                 return setCanStockLinks(settingAfter);
             } else {
                 return settingBefore;
@@ -214,6 +231,10 @@ async function setCanStockLinks(setting) {
     return setting;
 }
 
+/**
+ * ボタンの活性状態を変更する
+ * @param {活性か非活性か} isActivation 
+ */
 function changeActivationButtons(isActivation) {
     changeActivationCheckbox(isActivation);
 
@@ -226,20 +247,29 @@ function changeActivationButtons(isActivation) {
     changeActivationSettingButtons(isActivation);
 }
 
-function changeActivationSettingButtons(result) {
-    if (result !== STOCK_LINKS_SETTING.ON && result !== STOCK_LINKS_SETTING.OFF
+/**
+ * 設定に関するボタンの活性状態を変更する
+ * @param {活性か非活性か} isActivation 
+ */
+function changeActivationSettingButtons(isActivation) {
+    if (isActivation !== STOCK_LINKS_SETTING.ON && isActivation !== STOCK_LINKS_SETTING.OFF
         && (!CAN_STOCK_LINKS_BUTTON.checked && !CANNOT_STOCK_LINKS_BUTTON.checked))
         return;
 
-    if (result === STOCK_LINKS_SETTING.ON && !CAN_STOCK_LINKS_BUTTON.checked) {
+    if (isActivation === STOCK_LINKS_SETTING.ON && !CAN_STOCK_LINKS_BUTTON.checked) {
         CAN_STOCK_LINKS_BUTTON.checked = true;
         CANNOT_STOCK_LINKS_BUTTON.checked = false;
-    } else if (result === STOCK_LINKS_SETTING.OFF && !CANNOT_STOCK_LINKS_BUTTON.checked) {
+    } else if (isActivation === STOCK_LINKS_SETTING.OFF && !CANNOT_STOCK_LINKS_BUTTON.checked) {
         CAN_STOCK_LINKS_BUTTON.checked = false;
         CANNOT_STOCK_LINKS_BUTTON.checked = true;
     }
 }
 
+/**
+ * ストックされたリンクに関するボタンの活性状態を変更する
+ * @param {活性か非活性か} isActivation 
+ * @param {リンク数が0かどうか} isNoLink 
+ */
 function changeStockedLinksButtons(isActivation, isNoLink) {
     ALL_SELECT_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
     ALL_DESELECT_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
@@ -263,6 +293,11 @@ function copyLinks(event) {
     )
 }
 
+/**
+ * インデックスと等しいリンクのチェックボックスをクリックする
+ * @param {インデックス} index 
+ * @param {ターゲットタイプ} type 
+ */
 function checkLink(index, type) {
     // チェックボックスからのクリックの場合は2重でチェックすることになるためチェックしない
     if (type !== 'checkbox') {
@@ -278,14 +313,18 @@ function selectLink(event) {
 }
 
 function selectAllLinks(event) {
-    alignCheckAllLinksState(true);
+    checkAllLink(true);
 }
 
 function deselectAllLinks(event) {
-    alignCheckAllLinksState(false);
+    checkAllLink(false);
 }
 
-function alignCheckAllLinksState(isSelectAllLinks) {
+/**
+ * 全てのリンクのチェック状態を変更する
+ * @param {全てのリンクを選択するか全て解除するか} isSelectAllLinks 
+ */
+function checkAllLink(isSelectAllLinks) {
     for (let i = 1; i < TABLE.rows.length; i++) {
         if (document.getElementById(i).checked !== isSelectAllLinks)
             checkLink(i, event.target.type);
@@ -313,6 +352,11 @@ function deleteLink(event) {
     )
 }
 
+/**
+ * チェック状態のチェックボックスIDを設定する
+ * @param {チェック状態にするか} isCheck 
+ * @param {インデックス} index 
+ */
 function setCheckedCheckboxIDs(isCheck, index) {
     if (isCheck) {
         if (CHECKED_CHECKBOX_IDS.indexOf(index) === -1)
