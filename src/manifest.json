@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Markdown Links Creater",
-    "version": "0.4",
+    "version": "0.5",
     "description": "Create link as Markdown format using selected text or page title, and stock the link. Then copy all stocked links to ClipBoard.",
     "icons": {
         "128": "img/icon.png"
