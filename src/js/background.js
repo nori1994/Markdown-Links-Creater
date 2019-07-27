@@ -33,8 +33,12 @@ function createLink(info, tab) {
 
     let text = info.selectionText || info.title || url;
 
+    if (tab)
+        text = tab.title;
+
     if (url && text)
         saveLink('[' + text + '](' + url + ')');
+
     console.log('text: ' + text);
     console.log('url: ' + url);
 }
