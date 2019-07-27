@@ -48,22 +48,20 @@ async function initialize() {
             } else if (changes[LINKS_STORAGE_KEY]) {
                 setTable(false);
 
-                // リンク0から変わった時は再度ボタンを設定する
-                if (changes[LINKS_STORAGE_KEY][OLDVALUE_KEY].length === 0) {
-                    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
-                        setting => {
-                            changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], false);
-
-                        }
-                    )
-                }
-
-                // リンク0に変わった時はボタンを非活性にする
-                if (changes[LINKS_STORAGE_KEY][NEWVALUE_KEY].length === 0) {
+                if (changes[LINKS_STORAGE_KEY][OLDVALUE_KEY] == null ||
+                    changes[LINKS_STORAGE_KEY][NEWVALUE_KEY].length === 0) {
+                    // リンク0に変わった時はボタンを非活性にする
                     getChromeStorage(CAN_STOCK_LINKS_KEY).then(
                         setting => {
                             changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], true);
 
+                        }
+                    )
+                } else if (changes[LINKS_STORAGE_KEY][OLDVALUE_KEY].length === 0) {
+                    // リンク0から変わった時は再度ボタンを設定する
+                    getChromeStorage(CAN_STOCK_LINKS_KEY).then(
+                        setting => {
+                            changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], false);
                         }
                     )
                 }
@@ -111,7 +109,8 @@ function setLastLinkOnly() {
 function checkALLCheckedCheckboxs() {
     if (CHECKED_CHECKBOX_IDS.length !== 0) {
         let checkTimes = CHECKED_CHECKBOX_IDS.length;
-        for (let i = 0; i < checkTimes; i++) {
+        // チェックを外すと配列が変更されるため配列の最後から消していく
+        for (let i = checkTimes - 1; i >= 0; i--) {
             checkLink(CHECKED_CHECKBOX_IDS[i]);
         }
     }
@@ -150,15 +149,22 @@ async function setTable(isInitialize) {
     getChromeStorage().then(
         response => {
             let links = response[LINKS_STORAGE_KEY];
+            let setting = response[CAN_STOCK_LINKS_KEY];
+
+            // リンクが0の場合、ボタンを非活性にする
+            if (typeof links == null || (isInitialize && links.length == 0))
+                changeStockedLinksButtons(setting, true);
+
+            if (typeof links == null)
+                return false;
+
             // テーブルのクリア
             while (TABLE.rows[1]) TABLE.deleteRow(1);
 
             // テーブルの生成
-            for (let i = 0; i < links.length; i++) {
+            for (let i = 0; i < links.length; i++)
                 addTr(i, links[i]);
-            }
 
-            let setting = response[CAN_STOCK_LINKS_KEY];
             // OFFの時、チェックボックスのチェック状態を半輝度にする
             if (STOCK_LINKS_SETTING.OFF === setting) {
                 changeActivationCheckbox(false);
@@ -167,9 +173,12 @@ async function setTable(isInitialize) {
             // チェック状態の作り直し
             checkALLCheckedCheckboxs();
 
-            // リンクが0の場合、ボタンを非活性にする
-            if (isInitialize && links.length == 0)
-                changeStockedLinksButtons(setting, true);
+            return true;
+        }
+    ).then(
+        isLinksExist => {
+            if (!isLinksExist)
+                setLinks(new Array());
         }
     );
 }
@@ -240,7 +249,8 @@ function changeActivationButtons(isActivation) {
 
     getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
-            changeStockedLinksButtons(isActivation, links[LINKS_STORAGE_KEY].length === 0);
+            if (typeof links != null)
+                changeStockedLinksButtons(isActivation, links[LINKS_STORAGE_KEY].length === 0);
         }
     )
 
