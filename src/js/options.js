@@ -158,17 +158,21 @@ async function setTable(isInitialize) {
             if (typeof links == null)
                 return false;
 
+            // テーブルクリア前にチェックボックスのイベント解除しておく
+            for (let i = 1; i < TABLE.rows.length; i++)
+                changeActivationCheckbox(i, false);
+
             // テーブルのクリア
-            while (TABLE.rows[1]) TABLE.deleteRow(1);
+            while (TABLE.rows[1])
+                TABLE.deleteRow(1);
 
             // テーブルの生成
             for (let i = 0; i < links.length; i++)
                 addTr(i, links[i]);
 
             // OFFの時、チェックボックスのチェック状態を半輝度にする
-            if (STOCK_LINKS_SETTING.OFF === setting) {
-                changeActivationCheckbox(false);
-            }
+            if (STOCK_LINKS_SETTING.OFF === setting)
+                changeActivationCheckbox(1, false);
 
             // チェック状態の作り直し
             checkALLCheckedCheckboxs();
@@ -185,17 +189,18 @@ async function setTable(isInitialize) {
 
 /**
  * チェックボックスの活性状態を変更する
+ * @param {削除するチェックボックスのID} id 
  * @param {活性か非活性か} isActivation 
  */
-function changeActivationCheckbox(isActivation) {
-    let checkbox = document.getElementById(1);
+function changeActivationCheckbox(id, isActivation) {
+    let checkbox = document.getElementById(id);
     if (checkbox) {
         checkbox.disabled = !isActivation;
 
         if (isActivation) {
-            TABLE.rows[1].addEventListener('click', selectLink);
+            TABLE.rows[id].addEventListener('click', selectLink);
         } else {
-            TABLE.rows[1].removeEventListener('click', selectLink);
+            TABLE.rows[id].removeEventListener('click', selectLink);
         }
     }
 }
@@ -245,7 +250,7 @@ async function setCanStockLinks(setting) {
  * @param {活性か非活性か} isActivation 
  */
 function changeActivationButtons(isActivation) {
-    changeActivationCheckbox(isActivation);
+    changeActivationCheckbox(1, isActivation);
 
     getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
@@ -306,7 +311,7 @@ function copyLinks(event) {
 /**
  * インデックスと等しいリンクのチェックボックスをクリックする
  * @param {インデックス} index 
- * @param {ターゲットタイプ} type 
+ * @param {ターゲットタイプ。undifinedならチェックボックスをクリックする} type
  */
 function checkLink(index, type) {
     // チェックボックスからのクリックの場合は2重でチェックすることになるためチェックしない
