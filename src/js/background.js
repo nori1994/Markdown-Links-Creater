@@ -5,18 +5,37 @@ chrome.runtime.onInstalled.addListener(createContextMenu);
 chrome.runtime.onStartup.addListener(createContextMenu);
 
 // コンテキストメニュークリック時に発火するイベントハンドラの登録
-chrome.contextMenus.onClicked.addListener(createLink);
+chrome.contextMenus.onClicked.addListener(onClickContextMenu);
 
 // ブラウザアイコンクリック時にページリンクをMarkdown形式でコピーするイベントハンドラの登録
 chrome.browserAction.onClicked.addListener(createLink);
 
 function createContextMenu() {
     chrome.contextMenus.create({
-        id: 'createLinkMenu',
-        title: 'Create Markdown Links',
+        id: 'createLink',
+        title: 'Create Markdown Link',
         contexts: ['all'],
         type: 'normal'
     });
+    chrome.contextMenus.create({
+        id: 'separator',
+        contexts: ['all'],
+        type: 'separator'
+    });
+    chrome.contextMenus.create({
+        id: 'resetStockedLinks',
+        title: 'Reset Stocked Links',
+        contexts: ['all'],
+        type: 'normal'
+    });
+}
+
+function onClickContextMenu(info, tab) {
+    if (info.menuItemId === 'createLink') {
+        createLink(info, tab);
+    } else if (info.menuItemId === 'resetStockedLinks') {
+        resetStockedLinks();
+    }
 }
 
 function createLink(info, tab) {
@@ -41,11 +60,6 @@ function createLink(info, tab) {
 
     console.log('text: ' + text);
     console.log('url: ' + url);
-}
-
-async function getLinks() {
-    let links = await getChromeStorage(LINKS_STORAGE_KEY);
-    return links[LINKS_STORAGE_KEY];
 }
 
 function saveLink(text) {
@@ -80,6 +94,11 @@ function saveLink(text) {
         )
 }
 
+async function getLinks() {
+    let links = await getChromeStorage(LINKS_STORAGE_KEY);
+    return links[LINKS_STORAGE_KEY];
+}
+
 async function saveStorage(lastId, links, isUnsetCanStockLinks) {
     let linksSetting = {};
     linksSetting[LINKS_STORAGE_KEY] = links;
@@ -96,4 +115,8 @@ async function saveStorage(lastId, links, isUnsetCanStockLinks) {
         canStockLinks[CAN_STOCK_LINKS_KEY] = true;
         await setChromeStorage(canStockLinks);
     }
+}
+
+function resetStockedLinks() {
+    setLinks(new Array());
 }

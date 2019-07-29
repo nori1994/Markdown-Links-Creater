@@ -29,6 +29,13 @@ function copyToClipBoard(links) {
     document.body.removeChild(ta);
 }
 
+async function setLinks(links) {
+    let data = {};
+    data[LINKS_STORAGE_KEY] = links;
+    await setChromeStorage(data);
+}
+
+
 function getChromeStorage(keys = null) {
     return new Promise(resolve => {
         chrome.storage.local.get(keys, resolve);
