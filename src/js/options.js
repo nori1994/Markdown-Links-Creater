@@ -152,10 +152,10 @@ async function setTable(isInitialize) {
             let setting = response[CAN_STOCK_LINKS_KEY];
 
             // リンクが0の場合、ボタンを非活性にする
-            if (typeof links == null || (isInitialize && links.length == 0))
+            if (links == null || (isInitialize && links.length == 0))
                 changeStockedLinksButtons(setting, true);
 
-            if (typeof links == null)
+            if (links == null)
                 return false;
 
             // テーブルクリア前にチェックボックスのイベント解除しておく
@@ -254,7 +254,7 @@ function changeActivationButtons(isActivation) {
 
     getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
-            if (typeof links != null)
+            if (links != null)
                 changeStockedLinksButtons(isActivation, links[LINKS_STORAGE_KEY].length === 0);
         }
     )
@@ -379,12 +379,6 @@ function setCheckedCheckboxIDs(isCheck, index) {
     } else {
         CHECKED_CHECKBOX_IDS = CHECKED_CHECKBOX_IDS.filter(n => n !== index);
     }
-}
-
-async function setLinks(links) {
-    let data = {};
-    data[LINKS_STORAGE_KEY] = links;
-    await setChromeStorage(data);
 }
 
 async function resetLastID() {
