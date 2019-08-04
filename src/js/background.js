@@ -44,15 +44,13 @@ function createLink(info, tab) {
         url = info.srcUrl;
     } else {
         url = info.linkUrl || info.pageUrl || info.url;
-        if (!url) {
-            if (tab)
-                url = tab.url;
-        }
+        if (!url && tab)
+            url = tab.url;
     }
 
     let text = info.selectionText || info.title || url;
 
-    if (tab)
+    if (!text && tab)
         text = tab.title;
 
     if (url && text)
