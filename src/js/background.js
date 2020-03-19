@@ -18,6 +18,12 @@ function createContextMenu() {
         type: 'normal'
     });
     chrome.contextMenus.create({
+        id: 'createAllLink',
+        title: 'Create All Markdown Link',
+        contexts: ['all'],
+        type: 'normal'
+    });
+    chrome.contextMenus.create({
         id: 'separator',
         contexts: ['all'],
         type: 'separator'
@@ -33,6 +39,8 @@ function createContextMenu() {
 function onClickContextMenu(info, tab) {
     if (info.menuItemId === 'createLink') {
         createLink(info, tab);
+    } else if (info.menuItemId === 'createAllLink') {
+        createAllLink();
     } else if (info.menuItemId === 'resetStockedLinks') {
         resetStockedLinks();
     }
@@ -48,48 +56,19 @@ function createLink(info, tab) {
             url = tab.url;
     }
 
-    let text = info.selectionText || info.title || url;
+    let text = info.selectionText || info.title;
 
     if (!text && tab)
         text = tab.title;
 
+    if (!text)
+        text = url;
+
     if (url && text)
-        saveLink('[' + text + '](' + url + ')');
+        saveLinks(['[' + text + '](' + url + ')']);
 
     console.log('text: ' + text);
     console.log('url: ' + url);
-}
-
-function saveLink(text) {
-    getChromeStorage().then(
-        response => {
-            let lastId = response[LASTID_STORAGE_KEY];
-            if (Number(lastId)) {
-                lastId++;
-            } else {
-                lastId = 1;
-            }
-
-            let canStockLinks = response[CAN_STOCK_LINKS_KEY];
-            let links = response[LINKS_STORAGE_KEY];
-            if (!links || !canStockLinks)
-                links = new Array();
-
-            links.push(text);
-
-            return saveStorage(lastId, links, (canStockLinks == null));
-        }
-    )
-        .then(
-            response => {
-                return getLinks();
-            }
-        )
-        .then(
-            response => {
-                copyToClipBoard(response);
-            }
-        )
 }
 
 async function getLinks() {
@@ -113,6 +92,59 @@ async function saveStorage(lastId, links, isUnsetCanStockLinks) {
         canStockLinks[CAN_STOCK_LINKS_KEY] = true;
         await setChromeStorage(canStockLinks);
     }
+}
+
+function createAllLink() {
+    chrome.tabs.query({ 'lastFocusedWindow': true }, function (tabs) {
+        var linkStrs = new Array();
+        for (let tab of tabs) {
+            let text = tab.title;
+            if (!text)
+                text = tab.url;
+
+            console.log('text: ' + text);
+            console.log('url: ' + tab.url);
+
+            if (text && tab.url)
+                linkStrs.push('[' + text + '](' + tab.url + ')');
+        }
+
+        saveLinks(linkStrs);
+    });
+}
+
+function saveLinks(linkStrs) {
+    getChromeStorage().then(
+        response => {
+            let lastId = response[LASTID_STORAGE_KEY];
+            if (Number(lastId)) {
+                lastId++;
+            } else {
+                lastId = 1;
+            }
+
+            let canStockLinks = response[CAN_STOCK_LINKS_KEY];
+            let links = response[LINKS_STORAGE_KEY];
+            if (!links || !canStockLinks)
+                links = new Array();
+
+            for (let linkStr of linkStrs) {
+                links.push(linkStr);
+            }
+            console.log("links: " + links.length);
+            return saveStorage(lastId, links, (canStockLinks == null));
+        }
+    )
+        .then(
+            response => {
+                return getLinks();
+            }
+        )
+        .then(
+            response => {
+                copyToClipBoard(response);
+            }
+        )
 }
 
 function resetStockedLinks() {

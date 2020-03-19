@@ -42,9 +42,6 @@ async function initialize() {
         ((changes) => {
             if (changes[CAN_STOCK_LINKS_KEY]) {
                 changeActivationButtons(changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY]);
-
-                if (!changes[CAN_STOCK_LINKS_KEY][NEWVALUE_KEY])
-                    setLastLinkOnly();
             } else if (changes[LINKS_STORAGE_KEY]) {
                 setTable(false);
 
@@ -53,7 +50,7 @@ async function initialize() {
                     // リンク0に変わった時はボタンを非活性にする
                     getChromeStorage(CAN_STOCK_LINKS_KEY).then(
                         setting => {
-                            changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], true);
+                            changeStockedLinksButtons(true);
 
                         }
                     )
@@ -61,7 +58,7 @@ async function initialize() {
                     // リンク0から変わった時は再度ボタンを設定する
                     getChromeStorage(CAN_STOCK_LINKS_KEY).then(
                         setting => {
-                            changeStockedLinksButtons(setting[CAN_STOCK_LINKS_KEY], false);
+                            changeStockedLinksButtons(false);
                         }
                     )
                 }
@@ -149,11 +146,10 @@ async function setTable(isInitialize) {
     getChromeStorage().then(
         response => {
             let links = response[LINKS_STORAGE_KEY];
-            let setting = response[CAN_STOCK_LINKS_KEY];
 
             // リンクが0の場合、ボタンを非活性にする
             if (links == null || (isInitialize && links.length == 0))
-                changeStockedLinksButtons(setting, true);
+                changeStockedLinksButtons(true);
 
             if (links == null)
                 return false;
@@ -169,10 +165,6 @@ async function setTable(isInitialize) {
             // テーブルの生成
             for (let i = 0; i < links.length; i++)
                 addTr(i, links[i]);
-
-            // OFFの時、チェックボックスのチェック状態を半輝度にする
-            if (STOCK_LINKS_SETTING.OFF === setting)
-                changeActivationCheckbox(1, false);
 
             // チェック状態の作り直し
             checkALLCheckedCheckboxs();
@@ -250,12 +242,11 @@ async function setCanStockLinks(setting) {
  * @param {活性か非活性か} isActivation 
  */
 function changeActivationButtons(isActivation) {
-    changeActivationCheckbox(1, isActivation);
 
     getChromeStorage(LINKS_STORAGE_KEY).then(
         links => {
             if (links != null)
-                changeStockedLinksButtons(isActivation, links[LINKS_STORAGE_KEY].length === 0);
+                changeStockedLinksButtons(links[LINKS_STORAGE_KEY].length === 0);
         }
     )
 
@@ -282,13 +273,12 @@ function changeActivationSettingButtons(isActivation) {
 
 /**
  * ストックされたリンクに関するボタンの活性状態を変更する
- * @param {活性か非活性か} isActivation 
  * @param {リンク数が0かどうか} isNoLink 
  */
-function changeStockedLinksButtons(isActivation, isNoLink) {
-    ALL_SELECT_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
-    ALL_DESELECT_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
-    DELETE_BUTTON.disabled = (isActivation && !isNoLink) ? false : true;
+function changeStockedLinksButtons(isNoLink) {
+    ALL_SELECT_BUTTON.disabled = isNoLink;
+    ALL_DESELECT_BUTTON.disabled = isNoLink;
+    DELETE_BUTTON.disabled = isNoLink;
     COPY_BUTTON.disabled = isNoLink;
 }
 
