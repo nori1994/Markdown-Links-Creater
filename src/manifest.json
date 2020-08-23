@@ -20,8 +20,10 @@
     },
     "options_page": "options.html",
     "permissions": [
-        "tabs",
+        "activeTab",
+        "clipboardWrite",
         "contextMenus",
-        "storage"
+        "storage",
+        "tabs"
     ]
 }
