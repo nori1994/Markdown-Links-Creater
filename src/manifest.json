@@ -4,10 +4,12 @@
     "version": "0.9",
     "description": "Create link as Markdown format using selected text or page title, and stock the link. Then copy all stocked links to ClipBoard.",
     "icons": {
-        "128": "img/icon.png"
+        "16": "img/icon16.png",
+        "48": "img/icon48.png",
+        "128": "img/icon128.png"
     },
     "browser_action": {
-        "default_icon": "img/icon.png"
+        "default_icon": "img/icon32.png"
     },
     "background": {
         "scripts": [
